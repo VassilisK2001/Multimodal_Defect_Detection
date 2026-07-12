@@ -1,0 +1,6 @@
+data/raw/
+data/processed/
+checkpoints/
+.venv/
+__pycache__/
+*.egg-info/

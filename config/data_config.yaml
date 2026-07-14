@@ -1,3 +1,35 @@
+
 paths:
-  cwru_dir: data/raw/cwru/cwru
   mvtec_dir: data/raw/mvtec
+  cwru_dir: data/raw/cwru/cwru
+  manifest_dir: data/manifests
+
+mvtec_categories: [bottle, metal_nut, screw, capsule]
+
+cwru:
+  normal_prefix: "Normal"
+  fault_types: [outer_race, inner_race, ball]
+  severities: ["007", "014", "021"]   
+  sampling_rate_hz: 12000
+
+window_size: 2048
+
+severity_selection: random
+
+defect_to_fault_map:
+  bottle:
+    contamination: outer_race
+    broken_large: inner_race
+    broken_small: inner_race
+  metal_nut:
+    scratch: outer_race
+    bent: inner_race
+  screw:
+    scratch_head: outer_race
+    scratch_neck: outer_race
+    manipulated_front: ball
+  capsule:
+    scratch: outer_race
+    crack: inner_race
+    poke: ball
+    squeeze: ball

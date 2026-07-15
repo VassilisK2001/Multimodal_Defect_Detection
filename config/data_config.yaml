@@ -8,7 +8,13 @@ mvtec_categories: [bottle, metal_nut, screw, capsule]
 
 cwru:
   normal_prefix: "Normal"
-  fault_types: [outer_race, inner_race, ball]
+  fault_types:
+    - code: OR
+      name: outer_race
+    - code: IR
+      name: inner_race
+    - code: B
+      name: ball
   severities: ["007", "014", "021"]   
   sampling_rate_hz: 12000
 

@@ -32,9 +32,6 @@ class MultimodalDefectDataset(Dataset):
         self.image_transform = build_image_transform(training)
         self._mat_cache: dict[str, np.ndarray] = {}
 
-        # Vibration feature normalization stats — must be computed from the TRAINING split
-        # only (see compute_vibration_feature_stats below) and reused identically across
-        # train/val/test to avoid leaking information across the split boundary.
         self.vib_mean = vib_mean
         self.vib_std = vib_std
 
@@ -52,12 +49,12 @@ class MultimodalDefectDataset(Dataset):
     def __getitem__(self, idx: int):
         row = self.df.iloc[idx]
 
-        # --- Image branch ---
+        # Image branch
         image_path = self.project_root / row.image_path
         image = Image.open(image_path).convert("RGB")
         image = self.image_transform(image)
 
-        # --- Vibration branch ---
+        # Vibration branch
         signal = self._load_de_signal(row.vibration_file)
         start = row.vibration_window_idx * self.window_size
         window = signal[start:start + self.window_size].astype(np.float32)
@@ -71,7 +68,7 @@ class MultimodalDefectDataset(Dataset):
             vib_features = (vib_features - self.vib_mean) / self.vib_std
         vib_tensor = torch.tensor(vib_features, dtype=torch.float32)
 
-        # --- Labels ---
+        # Labels
         is_defect = torch.tensor(row.is_defect, dtype=torch.float32)
         fault_class_idx = torch.tensor(row.fault_class_idx, dtype=torch.long)
         area_ratio = torch.tensor(row.defect_area_ratio, dtype=torch.float32)

@@ -63,7 +63,7 @@ def build_cwru_inventory(cwru_dir: Path, config: dict, project_root: Path) -> pd
             continue
 
         fault_code, diameter_code, _position, _idx = match.groups()
-        fault_type = code_to_name[fault_code]  # driven by config, not hardcoded
+        fault_type = code_to_name[fault_code] 
         records.append({
             "path": rel_path, "condition": "fault",
             "fault_type": fault_type, "severity": diameter_code,
@@ -78,7 +78,7 @@ def build_mvtec_records(mvtec_dir: Path, config: dict, project_root: Path) -> li
     records = []
     defect_to_fault_map = config["defect_to_fault_map"]
 
-    for category in config["mvtec_categories"]:
+    for category in config["mvtec"]["categories"]:
         category_defect_map = defect_to_fault_map.get(category, {})
 
         # 'good' images from both train/ and test/ — pooled, since MVTec's official

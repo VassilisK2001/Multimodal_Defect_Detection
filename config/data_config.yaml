@@ -4,7 +4,8 @@ paths:
   cwru_dir: data/raw/cwru/cwru
   manifest_dir: data/manifests
 
-mvtec_categories: [bottle, metal_nut, screw, capsule]
+mvtec:
+  categories: [bottle, metal_nut, screw, capsule]
 
 cwru:
   normal_prefix: "Normal"
@@ -19,7 +20,6 @@ cwru:
   sampling_rate_hz: 12000
 
 window_size: 2048
-
 severity_selection: random
 
 defect_to_fault_map:

@@ -1,0 +1,7 @@
+image_encoder:
+  embedding_dim: 128
+  unfreeze_from: layer4
+ 
+vibration_encoder:
+  input_dim: 5
+  embedding_dim: 64

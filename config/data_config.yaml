@@ -39,3 +39,8 @@ defect_to_fault_map:
     crack: inner_race
     poke: ball
     squeeze: ball
+
+split:
+  train_frac: 0.7
+  val_frac: 0.15
+  test_frac: 0.15

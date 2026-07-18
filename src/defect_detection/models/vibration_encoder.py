@@ -1,5 +1,4 @@
 
-
 import torch.nn as nn
 
 from defect_detection.utils import load_yaml_config

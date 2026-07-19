@@ -6,8 +6,8 @@ import pandas as pd
 import pytest
 from scipy.io import loadmat
 
-from defect_detection.data.manifest import build_manifest, load_config
-from defect_detection.utils import find_project_root
+from defect_detection.data.manifest import build_manifest
+from defect_detection.utils import find_project_root, load_yaml_config
 
 
 @pytest.fixture(scope="module")
@@ -19,10 +19,9 @@ def manifest_df() -> pd.DataFrame:
 def project_root() -> Path:
     return find_project_root()
 
-
 @pytest.fixture(scope="module")
 def config() -> dict:
-    return load_config()
+    return load_yaml_config("config/data_config.yaml")
 
 
 # Structural integrity
@@ -166,7 +165,7 @@ def test_different_seed_can_produce_different_pairing():
 # Category / defect-type scoping
 
 def test_only_configured_categories_present(manifest_df, config):
-    assert set(manifest_df["category"].unique()) <= set(config["mvtec_categories"])
+    assert set(manifest_df["category"].unique()) <= set(config["mvtec"]["categories"])
 
 
 def test_only_mapped_defect_types_present_among_defective_rows(manifest_df, config):

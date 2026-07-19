@@ -5,11 +5,10 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import yaml
 from PIL import Image
 from scipy.io import loadmat
 
-from defect_detection.utils import find_project_root
+from defect_detection.utils import find_project_root, load_yaml_config
 
 
 def build_fault_code_maps(config: dict) -> tuple[dict, dict]:
@@ -18,12 +17,6 @@ def build_fault_code_maps(config: dict) -> tuple[dict, dict]:
     code_to_name = {ft["code"]: ft["name"] for ft in fault_types}
     name_to_code = {ft["name"]: ft["code"] for ft in fault_types}
     return code_to_name, name_to_code
-
-
-def load_config(config_path: str = "config/data_config.yaml") -> dict:
-    project_root = find_project_root()
-    with open(project_root / config_path) as f:
-        return yaml.safe_load(f)
 
 
 def get_defect_area_ratio(mask_path: Path) -> float:
@@ -148,7 +141,7 @@ def assign_vibration_sample(row: pd.Series, cwru_inventory: pd.DataFrame,
 
 
 def build_manifest(config_path: str = "config/data_config.yaml", seed: int = 42) -> pd.DataFrame:
-    config = load_config(config_path)
+    config = load_yaml_config(config_path)
     project_root = find_project_root()
     mvtec_dir = project_root / config["paths"]["mvtec_dir"]
     cwru_dir = project_root / config["paths"]["cwru_dir"]
@@ -184,7 +177,7 @@ def build_manifest(config_path: str = "config/data_config.yaml", seed: int = 42)
 
 
 if __name__ == "__main__":
-    config = load_config()
+    config = load_yaml_config("config/data_config.yaml")
     df = build_manifest()
 
     project_root = find_project_root()

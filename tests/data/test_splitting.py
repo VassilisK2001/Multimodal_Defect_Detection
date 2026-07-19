@@ -6,16 +6,15 @@ import pandas as pd
 import pytest
 from scipy.io import loadmat
 
-from defect_detection.data.manifest import load_config
 from defect_detection.data.splitting import (
     _compute_split_blocks, _get_n_windows, _redraw_window_indices, split_manifest,
 )
-from defect_detection.utils import find_project_root
+from defect_detection.utils import find_project_root, load_yaml_config
 
 
 @pytest.fixture(scope="module")
 def config() -> dict:
-    return load_config()
+    return load_yaml_config("config/data_config.yaml")
 
 
 @pytest.fixture(scope="module")

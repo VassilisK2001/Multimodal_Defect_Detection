@@ -7,13 +7,12 @@ import pytest
 import torch
 
 from defect_detection.data.dataset import MultimodalDefectDataset
-from defect_detection.data.manifest import load_config
-from defect_detection.utils import find_project_root
+from defect_detection.utils import find_project_root, load_yaml_config
 
 
 @pytest.fixture(scope="module")
 def config() -> dict:
-    return load_config()
+    return load_yaml_config("config/data_config.yaml")
 
 
 @pytest.fixture(scope="module")

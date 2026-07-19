@@ -4,9 +4,7 @@ import pandas as pd
 from scipy.io import loadmat
 from sklearn.model_selection import train_test_split
  
-from defect_detection.data.manifest import load_config
-from defect_detection.utils import find_project_root
-
+from defect_detection.utils import find_project_root, load_yaml_config
 
 def _get_n_windows(mat_path: Path, window_size: int) -> int:
     """Number of complete, non-overlapping windows available in a .mat file's DE signal."""
@@ -97,7 +95,7 @@ def split_manifest(manifest_df: pd.DataFrame, seed: int = 42) -> pd.DataFrame:
     """Full split pipeline: stratified image-level split, then split-aware window
     index redraw. Returns the manifest with 'split' and corrected 'vibration_window_idx' 
     columns."""
-    config = load_config()
+    config = load_yaml_config("config/data_config.yaml")
     project_root = find_project_root()
     window_size = config["window_size"]
     rng = np.random.default_rng(seed)
@@ -115,7 +113,7 @@ def split_manifest(manifest_df: pd.DataFrame, seed: int = 42) -> pd.DataFrame:
  
  
 if __name__ == "__main__":
-    config = load_config()
+    config = load_yaml_config("config/data_config.yaml")
     project_root = find_project_root()
  
     manifest_path = project_root / config["paths"]["manifest_dir"] / "manifest.csv"

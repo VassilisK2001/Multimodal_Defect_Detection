@@ -1,0 +1,13 @@
+
+optimizer:
+  lr: 1.0e-4
+  weight_decay: 1.0e-5
+
+training:
+  batch_size: 32
+  max_epochs: 60
+  early_stopping_patience: 7
+
+loss:
+  # Effective-number-of-samples beta (Cui et al., 2019) for the fault-type head's class weights
+  fault_type_beta: 0.99

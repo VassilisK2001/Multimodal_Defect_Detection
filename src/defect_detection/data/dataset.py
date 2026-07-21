@@ -7,6 +7,7 @@ from torch.utils.data import Dataset
 
 from defect_detection.data.augmentations import build_image_transform, jitter, scale
 from defect_detection.data.features import extract_features
+from defect_detection.data.normalization import apply_vibration_normalization
 from defect_detection.utils import find_project_root
 
 
@@ -19,7 +20,7 @@ class MultimodalDefectDataset(Dataset):
         fault_class_idx - scalar long (-1 / 0 / 1 / 2), target for the fault-type head
                           (-1 is a sentinel for normal samples, masked out in the loss)
         area_ratio      - scalar float32, defect_area_ratio (0.0 for normal samples),
-                          kept for potential later use
+                          kept for potential later use (e.g. weighted sampling)
     """
 
     def __init__(self, manifest_df, window_size: int, fs: int, training: bool = False,
@@ -32,6 +33,7 @@ class MultimodalDefectDataset(Dataset):
         self.image_transform = build_image_transform(training)
         self._mat_cache: dict[str, np.ndarray] = {}
 
+        # Optional vibration normalization stats, computed from the training set.
         self.vib_mean = vib_mean
         self.vib_std = vib_std
 
@@ -49,12 +51,12 @@ class MultimodalDefectDataset(Dataset):
     def __getitem__(self, idx: int):
         row = self.df.iloc[idx]
 
-        # Image branch
+        # Image branch 
         image_path = self.project_root / row.image_path
         image = Image.open(image_path).convert("RGB")
         image = self.image_transform(image)
 
-        # Vibration branch
+        # Vibration branch 
         signal = self._load_de_signal(row.vibration_file)
         start = row.vibration_window_idx * self.window_size
         window = signal[start:start + self.window_size].astype(np.float32)
@@ -65,7 +67,7 @@ class MultimodalDefectDataset(Dataset):
 
         vib_features = extract_features(window, fs=self.fs)
         if self.vib_mean is not None and self.vib_std is not None:
-            vib_features = (vib_features - self.vib_mean) / self.vib_std
+            vib_features = apply_vibration_normalization(vib_features, self.vib_mean, self.vib_std)
         vib_tensor = torch.tensor(vib_features, dtype=torch.float32)
 
         # Labels

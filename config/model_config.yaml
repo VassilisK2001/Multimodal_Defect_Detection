@@ -1,12 +1,19 @@
+
 image_encoder:
+  architecture: resnet18
+  pretrained_weights: imagenet1k
+  unfreeze_from: layer4    
   embedding_dim: 128
-  unfreeze_from: layer4
- 
+
 vibration_encoder:
-  input_dim: 5
+  architecture: mlp
+  input_dim: 5                
+  hidden_dim: 32
   embedding_dim: 64
+  num_layers: 2
 
 fusion:
+  type: concat          
   hidden_dim: 128
   dropout: 0.3
   num_fault_classes: 3

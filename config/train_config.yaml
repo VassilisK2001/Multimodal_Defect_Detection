@@ -2,6 +2,7 @@
 optimizer:
   lr: 1.0e-4
   weight_decay: 1.0e-5
+  fine_tune_lr_multiplier: 0.1
 
 training:
   batch_size: 32

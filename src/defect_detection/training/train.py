@@ -266,6 +266,7 @@ def train(modality: str = "both", experiment_name: str = "defect_detection"):
 
     max_epochs = train_config["training"]["max_epochs"]
     patience = train_config["training"]["early_stopping_patience"]
+    min_delta = train_config["training"]["min_delta"]
     best_val_loss = float("inf")
     patience_counter = 0
     history = {
@@ -326,13 +327,12 @@ def train(modality: str = "both", experiment_name: str = "defect_detection"):
                 )
 
                 print(f"Epoch {epoch+1}/{max_epochs} | "
-                      f"train_defect={train_metrics['defect_loss']:.4f} "
-                      f"train_fault={train_metrics['fault_type_loss']:.4f} | "
-                      f"val_defect={val_metrics['defect_loss']:.4f} "
-                      f"val_fault={val_metrics['fault_type_loss']:.4f} "
-                      f"val_acc={val_metrics['defect_accuracy']:.4f}")
+                      f"train_defect_loss={train_metrics['defect_loss']:.4f} "
+                      f"train_fault_type_loss={train_metrics['fault_type_loss']:.4f} | "
+                      f"val_defect_loss={val_metrics['defect_loss']:.4f} "
+                      f"val_fault_type_loss={val_metrics['fault_type_loss']:.4f}")
 
-                if val_total_loss < best_val_loss:
+                if val_total_loss < best_val_loss - min_delta:
                     best_val_loss = val_total_loss
                     patience_counter = 0
                     torch.save(model.state_dict(), best_checkpoint_path)
@@ -353,25 +353,29 @@ def train(modality: str = "both", experiment_name: str = "defect_detection"):
 
             model.load_state_dict(torch.load(best_checkpoint_path))
             model.eval()
-
+ 
             sample_images, sample_vib, _, _, _ = next(iter(val_loader))
             sample_kwargs = {}
             if model.image_encoder is not None:
                 sample_kwargs["image"] = sample_images.to(device)
             if model.vibration_encoder is not None:
                 sample_kwargs["vib_features"] = sample_vib.to(device)
-
+ 
             with torch.no_grad():
                 sample_output = model(**sample_kwargs)
-
+ 
             input_example = {k: v.cpu().numpy() for k, v in sample_kwargs.items()}
-            output_example = tuple(o.cpu().numpy() for o in sample_output)
+            output_example = {
+                "defect_logit": sample_output[0].cpu().numpy(),
+                "fault_type_logits": sample_output[1].cpu().numpy(),
+            }
             signature = infer_signature(input_example, output_example)
-
+ 
             mlflow.pytorch.log_model(
-                model, artifact_path="model", signature=signature, input_example=input_example,
+                model, name="model", signature=signature, input_example=input_example,
+                serialization_format="pickle",
             )
-
+ 
             registered_name = f"defect_detection_{modality}"
             model_uri = f"runs:/{run.info.run_id}/model"
             mlflow.register_model(model_uri, registered_name)

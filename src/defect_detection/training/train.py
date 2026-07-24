@@ -1,10 +1,11 @@
-
+import os 
 import argparse
+from typing import cast
 import tempfile
 from pathlib import Path
 
 import mlflow
-import mlflow.pytorch
+import mlflow.pytorch as pt
 import numpy as np
 import pandas as pd
 import torch
@@ -13,7 +14,7 @@ from torch.utils.data import DataLoader
 
 from defect_detection.data.dataset import MultimodalDefectDataset
 from defect_detection.data.normalization import compute_vibration_feature_stats
-from defect_detection.models.fusion_model import MultimodalDefectClassifier
+from defect_detection.models.fusion_model import MultimodalDefectClassifier, Modality
 from defect_detection.training.losses import (
     TwoStageLoss,
     compute_defect_gate_pos_weight,
@@ -229,7 +230,7 @@ def evaluate(model: MultimodalDefectClassifier, loader: DataLoader,
     }
 
 
-def train(modality: str = "both", experiment_name: str = "defect_detection"):
+def train(modality: Modality = "both", experiment_name: str = "defect_detection"):
     """Train a MultimodalDefectClassifier and log the run to MLflow.
 
     Args:
@@ -254,8 +255,8 @@ def train(modality: str = "both", experiment_name: str = "defect_detection"):
     )
 
     batch_size = train_config["training"]["batch_size"]
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True, persistent_workers=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True, persistent_workers=True)
 
     pos_weight = compute_defect_gate_pos_weight(train_df).to(device)
     fault_type_weights = compute_fault_type_class_weights(train_df).to(device)
@@ -371,7 +372,7 @@ def train(modality: str = "both", experiment_name: str = "defect_detection"):
             }
             signature = infer_signature(input_example, output_example)
  
-            mlflow.pytorch.log_model(
+            pt.log_model(
                 model, name="model", signature=signature, input_example=input_example,
                 serialization_format="pickle",
             )
@@ -388,4 +389,4 @@ if __name__ == "__main__":
     parser.add_argument("--modality", choices=["both", "image", "vibration"], default="both")
     args = parser.parse_args()
 
-    train(modality=args.modality)
+    train(modality=cast(Modality, args.modality))

@@ -40,13 +40,13 @@ class MultimodalDefectDataset(Dataset):
     def __len__(self) -> int:
         return len(self.df)
 
-    def _load_de_signal(self, relative_mat_path: str) -> np.ndarray:
-        if relative_mat_path not in self._mat_cache:
-            mat_path = self.project_root / relative_mat_path
+    def _load_de_signal(self, vibration_file: str) -> np.ndarray:
+        if vibration_file not in self._mat_cache:
+            mat_path = self.project_root / vibration_file
             mat = loadmat(mat_path)
             de_key = [k for k in mat.keys() if "DE_time" in k][0]
-            self._mat_cache[relative_mat_path] = mat[de_key].flatten()
-        return self._mat_cache[relative_mat_path]
+            self._mat_cache[vibration_file] = mat[de_key].flatten()
+        return self._mat_cache[vibration_file]
 
     def __getitem__(self, idx: int):
         row = self.df.iloc[idx]

@@ -1,4 +1,4 @@
-import os 
+
 import argparse
 from typing import cast
 import tempfile
@@ -230,16 +230,21 @@ def evaluate(model: MultimodalDefectClassifier, loader: DataLoader,
     }
 
 
-def train(modality: Modality = "both", experiment_name: str = "defect_detection"):
+def train(modality: Modality = "both", experiment_name: str = "defect_detection", seed: int = 42):
     """Train a MultimodalDefectClassifier and log the run to MLflow.
 
     Args:
-        modality: "both", "image", or "vibration" — which encoder(s) feed the model.
+       modality: "both", "image", or "vibration" — which encoder(s) feed the model.
         experiment_name: MLflow experiment name.
+       seed: Random seed for reproducibility. Should be kept identical across
+            modality runs intended for a fair comparison, since training is
+            otherwise stochastic (weight initialization, batch shuffling).
 
     Returns:
         The trained model (best early-stopped weights loaded).
     """
+    torch.manual_seed(seed)
+
     project_root = find_project_root()
     data_config = load_yaml_config("config/data_config.yaml")
     model_config = load_yaml_config("config/model_config.yaml")
@@ -287,6 +292,7 @@ def train(modality: Modality = "both", experiment_name: str = "defect_detection"
 
         with mlflow.start_run(run_name=f"{modality}") as run:
             mlflow.log_param("modality", modality)
+            mlflow.log_param("seed", seed)
 
             flat_params = {}
             flat_params.update({f"model.{k}": v for k, v in flatten_dict(model_config).items()})

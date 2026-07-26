@@ -71,16 +71,25 @@ def compute_defect_gate_pos_weight(train_df: pd.DataFrame) -> torch.Tensor:
 class TwoStageLoss(nn.Module):
     """Combined loss for a binary defect gate and a multi-class fault-type head."""
 
-    def __init__(self, defect_pos_weight: torch.Tensor, fault_type_class_weights: torch.Tensor):
+    def __init__(self, defect_pos_weight: torch.Tensor, fault_type_class_weights: torch.Tensor,
+                 label_smoothing: float | None = None):
         """
         Args:
             defect_pos_weight: pos_weight passed to the defect gate's BCEWithLogitsLoss.
             fault_type_class_weights: Per-class weights passed to the fault-type
                 head's CrossEntropyLoss.
+            label_smoothing: Label smoothing factor for the fault-type head's
+                CrossEntropyLoss. Defaults to config/train_config.yaml's
+                loss.label_smoothing if not given.
         """
         super().__init__()
+        if label_smoothing is None:
+            label_smoothing = load_yaml_config("config/train_config.yaml")["loss"]["label_smoothing"]
+
         self.defect_criterion = nn.BCEWithLogitsLoss(pos_weight=defect_pos_weight)
-        self.fault_type_criterion = nn.CrossEntropyLoss(weight=fault_type_class_weights)
+        self.fault_type_criterion = nn.CrossEntropyLoss(
+            weight=fault_type_class_weights, label_smoothing=label_smoothing,
+        )
 
     def forward(self, defect_logit: torch.Tensor, fault_type_logits: torch.Tensor,
                 is_defect: torch.Tensor, fault_class_idx: torch.Tensor

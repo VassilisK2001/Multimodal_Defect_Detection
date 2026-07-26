@@ -12,7 +12,6 @@ from defect_detection.training.losses import (
 )
 
 
-# Fault class order
 def test_fault_class_order_has_three_classes():
     """Config should define exactly the three expected fault classes."""
     order = _fault_class_order()
@@ -20,7 +19,6 @@ def test_fault_class_order_has_three_classes():
     assert set(order) == {"outer_race", "inner_race", "ball"}
 
 
-# compute_fault_type_class_weights
 
 def test_fault_type_weights_hand_verifiable():
     """Equal class counts should produce equal weights (1.0 after normalization)."""
@@ -88,8 +86,6 @@ def test_fault_type_weights_raises_on_missing_class():
         compute_fault_type_class_weights(df)
 
 
-# compute_defect_gate_pos_weight
-
 def test_defect_gate_pos_weight_hand_verifiable():
     """pos_weight should equal N_negative / N_positive."""
     df = pd.DataFrame({"is_defect": [0] * 100 + [1] * 25})
@@ -104,14 +100,44 @@ def test_defect_gate_pos_weight_raises_when_no_positives():
         compute_defect_gate_pos_weight(df)
 
 
-# TwoStageLoss: batch with defective samples
-
 @pytest.fixture
 def loss_fn():
     """Fixed, arbitrary weight values used to test TwoStageLoss's mechanics."""
     pos_weight = torch.tensor(4.0)
     fault_weights = torch.tensor([0.8, 1.0, 1.4])
     return TwoStageLoss(pos_weight, fault_weights)
+
+
+def test_label_smoothing_default_matches_train_config():
+    """Omitting label_smoothing should use config/train_config.yaml's loss.label_smoothing."""
+    from defect_detection.utils import load_yaml_config
+
+    config_value = load_yaml_config("config/train_config.yaml")["loss"]["label_smoothing"]
+
+    default_loss_fn = TwoStageLoss(torch.tensor(4.0), torch.tensor([1.0, 1.0, 1.0]))
+    explicit_loss_fn = TwoStageLoss(
+        torch.tensor(4.0), torch.tensor([1.0, 1.0, 1.0]), label_smoothing=config_value,
+    )
+
+    assert default_loss_fn.fault_type_criterion.label_smoothing == explicit_loss_fn.fault_type_criterion.label_smoothing
+
+
+def test_label_smoothing_reaches_fault_type_criterion():
+    """An explicit label_smoothing value should be applied to the underlying
+    CrossEntropyLoss, not silently dropped."""
+    loss_fn = TwoStageLoss(
+        torch.tensor(4.0), torch.tensor([1.0, 1.0, 1.0]), label_smoothing=0.2,
+    )
+    assert loss_fn.fault_type_criterion.label_smoothing == 0.2
+
+
+def test_zero_label_smoothing_is_respected():
+    """label_smoothing=0.0 is a legitimate value and must not be silently replaced
+    by the config default."""
+    loss_fn = TwoStageLoss(
+        torch.tensor(4.0), torch.tensor([1.0, 1.0, 1.0]), label_smoothing=0.0,
+    )
+    assert loss_fn.fault_type_criterion.label_smoothing == 0.0
 
 
 def test_batch_with_defective_samples_returns_valid_fault_loss(loss_fn):
@@ -142,13 +168,14 @@ def test_masking_excludes_normal_samples_correctly(loss_fn):
     _, _, fault_type_loss, _ = loss_fn(defect_logit, fault_logits, is_defect, fault_class_idx)
 
     defect_mask = is_defect.bool()
-    reference_criterion = nn.CrossEntropyLoss(weight=loss_fn.fault_type_criterion.weight)
+    reference_criterion = nn.CrossEntropyLoss(
+        weight=loss_fn.fault_type_criterion.weight,
+        label_smoothing=loss_fn.fault_type_criterion.label_smoothing,
+    )
     expected = reference_criterion(fault_logits[defect_mask], fault_class_idx[defect_mask])
 
     assert torch.isclose(fault_type_loss, expected)
 
-
-# TwoStageLoss: batch with zero defective samples
 
 def test_batch_with_no_defective_samples_returns_none_fault_loss(loss_fn):
     """A batch with zero defective samples should return fault_type_loss=None and
@@ -166,8 +193,6 @@ def test_batch_with_no_defective_samples_returns_none_fault_loss(loss_fn):
     assert n_defective == 0
     assert torch.isclose(total_loss, defect_loss)
 
-
-# Gradient flow
 
 def test_backward_works_with_defective_samples(loss_fn):
     """Backward pass should populate gradients for both heads' inputs."""
@@ -195,8 +220,6 @@ def test_backward_works_with_no_defective_samples(loss_fn):
 
     assert defect_logit.grad is not None
 
-
-# Weighting actually applied
 
 def test_pos_weight_changes_loss_value():
     """A weighted BCE loss should differ from an unweighted one on an imbalanced batch."""

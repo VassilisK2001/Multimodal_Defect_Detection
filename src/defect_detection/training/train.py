@@ -230,7 +230,8 @@ def evaluate(model: MultimodalDefectClassifier, loader: DataLoader,
     }
 
 
-def train(modality: Modality = "both", experiment_name: str = "defect_detection", seed: int = 42):
+def train(modality: Modality = "both", experiment_name: str = "defect_detection", seed: int = 42, 
+        unfreeze_from: str | None = None, run_name_suffix: str = ""):
     """Train a MultimodalDefectClassifier and log the run to MLflow.
 
     Args:
@@ -239,6 +240,9 @@ def train(modality: Modality = "both", experiment_name: str = "defect_detection"
        seed: Random seed for reproducibility. Should be kept identical across
             modality runs intended for a fair comparison, since training is
             otherwise stochastic (weight initialization, batch shuffling).
+       unfreeze_from: Override for the image encoder's freeze boundary.Defaults 
+            to config/model_config.yaml's image_encoder.unfreeze_from if not given.
+       run_name_suffix: Appended to the MLflow run name.
 
     Returns:
         The trained model (best early-stopped weights loaded).
@@ -249,6 +253,8 @@ def train(modality: Modality = "both", experiment_name: str = "defect_detection"
     data_config = load_yaml_config("config/data_config.yaml")
     model_config = load_yaml_config("config/model_config.yaml")
     train_config = load_yaml_config("config/train_config.yaml")
+
+    model_config["image_encoder"]["unfreeze_from"] = unfreeze_from or model_config["image_encoder"]["unfreeze_from"]
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -267,7 +273,7 @@ def train(modality: Modality = "both", experiment_name: str = "defect_detection"
     fault_type_weights = compute_fault_type_class_weights(train_df).to(device)
     criterion = TwoStageLoss(pos_weight, fault_type_weights)
 
-    model = MultimodalDefectClassifier(modality=modality).to(device)
+    model = MultimodalDefectClassifier(modality=modality, unfreeze_from=unfreeze_from).to(device)
     optimizer = build_optimizer(model, train_config)
 
     max_epochs = train_config["training"]["max_epochs"]

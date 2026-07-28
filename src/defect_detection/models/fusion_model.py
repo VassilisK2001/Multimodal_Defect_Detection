@@ -17,6 +17,7 @@ class MultimodalDefectClassifier(nn.Module):
                  vib_embedding_dim: int | None = None,
                  fusion_hidden_dim: int | None = None,
                  dropout: float | None = None,
+                 unfreeze_from: str | None = None,
                  num_fault_classes: int | None = None):
         """Build the classifier for a given modality configuration.
 
@@ -31,6 +32,9 @@ class MultimodalDefectClassifier(nn.Module):
                 config/model_config.yaml's fusion.hidden_dim.
             dropout: Fusion MLP dropout rate. Defaults to
                 config/model_config.yaml's fusion.dropout.
+            unfreeze_from: Nname of the first ResNet18 child module to 
+                leave trainable. Defaults to config/model_config.yaml's 
+                image_encoder.unfreeze_from.
             num_fault_classes: Number of fault-type classes. Defaults to
                 config/model_config.yaml's fusion.num_fault_classes.
         """
@@ -48,7 +52,7 @@ class MultimodalDefectClassifier(nn.Module):
         self.modality = modality
 
         self.image_encoder = (
-            build_image_encoder(embedding_dim=img_embedding_dim)
+            build_image_encoder(embedding_dim=img_embedding_dim, unfreeze_from=unfreeze_from)
             if modality in ("both", "image") else None
         )
         self.vibration_encoder = (

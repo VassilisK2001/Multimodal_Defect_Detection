@@ -137,6 +137,37 @@ def test_zero_dropout_not_overridden_by_config():
     assert isinstance(dropout_layer, torch.nn.Dropout)
     assert dropout_layer.p == 0.0
 
+def test_unfreeze_from_override_reaches_image_encoder():
+    """Passing unfreeze_from should change which layers of the image encoder are
+    trainable, supporting ablations such as linear probing."""
+    model = MultimodalDefectClassifier(modality="image", unfreeze_from="fc")
+ 
+    for name in ["conv1", "bn1", "layer1", "layer2", "layer3", "layer4"]:
+        submodule = getattr(model.image_encoder, name)
+        for param in submodule.parameters():
+            assert not param.requires_grad, f"{name} should be frozen when unfreeze_from='fc'"
+ 
+    for param in model.image_encoder.fc.parameters():
+        assert param.requires_grad
+ 
+ 
+def test_unfreeze_from_default_matches_model_config():
+    """Omitting unfreeze_from should behave identically to the model_config.yaml
+    default (layer4 remains trainable)."""
+    default_model = MultimodalDefectClassifier(modality="image")
+    explicit_model = MultimodalDefectClassifier(modality="image", unfreeze_from="layer4")
+ 
+    default_layer4_trainable = all(p.requires_grad for p in default_model.image_encoder.layer4.parameters())
+    explicit_layer4_trainable = all(p.requires_grad for p in explicit_model.image_encoder.layer4.parameters())
+ 
+    assert default_layer4_trainable == explicit_layer4_trainable == True
+ 
+ 
+def test_unfreeze_from_override_does_not_affect_vibration_only_modality():
+    """unfreeze_from has no effect when modality='vibration', since there is no
+    image encoder to apply it to — should not raise."""
+    model = MultimodalDefectClassifier(modality="vibration", unfreeze_from="fc")
+    assert model.image_encoder is None
 
 # Gradient flow
 

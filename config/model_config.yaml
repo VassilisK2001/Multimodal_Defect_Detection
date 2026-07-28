@@ -1,5 +1,5 @@
 
-image_encoder:
+image_encoder:   
   architecture: resnet18
   pretrained_weights: imagenet1k
   unfreeze_from: layer4    

@@ -3,36 +3,15 @@ import math
 
 import pytest
 import torch
-from torch.utils.data import DataLoader, TensorDataset
 
 from defect_detection.models.fusion_model import MultimodalDefectClassifier
 from defect_detection.training.losses import TwoStageLoss
 from defect_detection.training.train import (
-    _forward_batch,
     build_optimizer,
     evaluate,
     train_one_epoch,
 )
-
-
-def make_synthetic_loader(n_samples: int, n_defective: int, batch_size: int = 8) -> DataLoader:
-    """Build a synthetic DataLoader yielding (image, vib_features, is_defect,
-    fault_class_idx, area_ratio) batches."""
-    images = torch.randn(n_samples, 3, 224, 224)
-    vib_features = torch.randn(n_samples, 5)
-
-    is_defect = torch.zeros(n_samples)
-    is_defect[:n_defective] = 1.0
-
-    fault_class_idx = torch.full((n_samples,), -1, dtype=torch.long)
-    if n_defective > 0:
-        fault_class_idx[:n_defective] = torch.randint(0, 3, (n_defective,))
-
-    area_ratio = torch.zeros(n_samples)
-
-    dataset = TensorDataset(images, vib_features, is_defect, fault_class_idx, area_ratio)
-    return DataLoader(dataset, batch_size=batch_size, shuffle=False)
-
+from tests.factories import make_synthetic_loader
 
 @pytest.fixture
 def train_config() -> dict:
@@ -98,18 +77,17 @@ def test_weight_decay_applied(train_config):
 
 
 @pytest.mark.parametrize("modality", ["both", "image", "vibration"])
-def test_forward_batch_routes_inputs_correctly(modality):
+def test_train_one_epoch_works_for_all_modalities(modality, criterion, train_config):
+    """train_one_epoch should run without error and return valid metrics for every
+    modality."""
     model = MultimodalDefectClassifier(modality=modality)
-    device = torch.device("cpu")
-    loader = make_synthetic_loader(n_samples=8, n_defective=2)
-    batch = next(iter(loader))
-
-    defect_logit, fault_type_logits, is_defect, fault_class_idx = _forward_batch(model, batch, device)
-
-    assert defect_logit.shape == (8, 1)
-    assert fault_type_logits.shape == (8, 3)
-    assert is_defect.device == device
-    assert fault_class_idx.device == device
+    optimizer = build_optimizer(model, train_config)
+    loader = make_synthetic_loader(n_samples=8, n_defective=3)
+ 
+    metrics = train_one_epoch(model, loader, criterion, optimizer, torch.device("cpu"))
+ 
+    assert set(metrics.keys()) == {"defect_loss", "fault_type_loss", "defect_accuracy", "fault_type_accuracy"}
+    assert not math.isnan(metrics["defect_loss"])
 
 
 def test_train_one_epoch_returns_expected_keys(criterion, train_config):

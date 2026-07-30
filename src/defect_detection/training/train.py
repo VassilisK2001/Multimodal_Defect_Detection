@@ -26,6 +26,7 @@ from defect_detection.training.visualization import (
     plot_fault_type_accuracy_curve,
     plot_fault_type_loss_curve,
 )
+from defect_detection.models.batch_utils import forward_batch
 from defect_detection.utils import find_project_root, flatten_dict, load_yaml_config
 
 
@@ -104,23 +105,6 @@ def build_optimizer(model: MultimodalDefectClassifier, train_config: dict) -> to
 
     return torch.optim.AdamW(param_groups, weight_decay=weight_decay)
 
-
-def _forward_batch(model: MultimodalDefectClassifier, batch, device: torch.device):
-    """Move a batch to device and run the model's forward pass."""
-    images, vib_features, is_defect, fault_class_idx, _ = batch
-    is_defect = is_defect.to(device)
-    fault_class_idx = fault_class_idx.to(device)
-
-    kwargs = {}
-    if model.image_encoder is not None:
-        kwargs["image"] = images.to(device)
-    if model.vibration_encoder is not None:
-        kwargs["vib_features"] = vib_features.to(device)
-
-    defect_logit, fault_type_logits = model(**kwargs)
-    return defect_logit, fault_type_logits, is_defect, fault_class_idx
-
-
 def train_one_epoch(model: MultimodalDefectClassifier, loader: DataLoader,
                      criterion: TwoStageLoss, optimizer: torch.optim.Optimizer,
                      device: torch.device) -> dict:
@@ -145,7 +129,7 @@ def train_one_epoch(model: MultimodalDefectClassifier, loader: DataLoader,
     correct_fault_type = 0
 
     for batch in loader:
-        defect_logit, fault_type_logits, is_defect, fault_class_idx = _forward_batch(model, batch, device)
+        defect_logit, fault_type_logits, is_defect, fault_class_idx = forward_batch(model, batch, device)
 
         optimizer.zero_grad()
         total_loss, defect_loss, fault_type_loss, n_defective = criterion(
@@ -201,7 +185,7 @@ def evaluate(model: MultimodalDefectClassifier, loader: DataLoader,
     correct_fault_type = 0
 
     for batch in loader:
-        defect_logit, fault_type_logits, is_defect, fault_class_idx = _forward_batch(model, batch, device)
+        defect_logit, fault_type_logits, is_defect, fault_class_idx = forward_batch(model, batch, device)
 
         _, defect_loss, fault_type_loss, n_defective = criterion(
             defect_logit, fault_type_logits, is_defect, fault_class_idx,
@@ -296,7 +280,7 @@ def train(modality: Modality = "both", experiment_name: str = "defect_detection"
         vib_stats_path = Path(tmp_dir) / "vib_normalization_stats.npz"
         np.savez(vib_stats_path, mean=vib_mean, std=vib_std)
 
-        with mlflow.start_run(run_name=f"{modality}") as run:
+        with mlflow.start_run(run_name=f"{modality}{run_name_suffix}") as run:
             mlflow.log_param("modality", modality)
             mlflow.log_param("seed", seed)
 

@@ -23,9 +23,7 @@ def collect_test_predictions(model: MultimodalDefectClassifier, loader: DataLoad
         Dict with:
             is_defect_true: (N,) int array.
             is_defect_pred: (N,) int array, thresholded at defect_threshold.
-            defect_proba: (N,) float array, raw sigmoid probabilities — kept
-                separately from is_defect_pred so the same collected data can be
-                reused for threshold tuning without re-running inference.
+            defect_proba: (N,) float array, raw sigmoid probabilities.
             fault_class_true: (M,) int array, defective samples only.
             fault_class_pred: (M,) int array, argmax predictions, defective
                 samples only.

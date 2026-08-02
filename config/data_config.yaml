@@ -3,6 +3,7 @@ paths:
   mvtec_dir: data/raw/mvtec
   cwru_dir: data/raw/cwru/cwru
   manifest_dir: data/manifests
+  reports_dir: reports
 
 mvtec:
   categories: [bottle, metal_nut, screw, capsule]

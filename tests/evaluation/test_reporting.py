@@ -4,7 +4,7 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 
-from defect_detection.evaluation.reporting import save_evaluation_results
+from defect_detection.evaluation.reporting import save_evaluation_results, save_cv_results
 
 
 def test_creates_expected_files(tmp_path):
@@ -60,3 +60,41 @@ def test_creates_parent_directories_if_missing(tmp_path):
     save_evaluation_results("vibration", result, nested_output_dir)
 
     assert (nested_output_dir / "vibration" / "x.png").exists()
+
+def test_cv_creates_expected_files(tmp_path):
+    fold_results = [
+        {"defect_metrics": {"defect": {"f1": np.float64(0.9)}}},
+        {"defect_metrics": {"defect": {"f1": np.float64(0.85)}}},
+    ]
+    aggregated = {"defect_metrics": {"defect": {"f1": {"mean": 0.875, "std": 0.025}}}}
+ 
+    save_cv_results("both", fold_results, aggregated, tmp_path)
+ 
+    assert (tmp_path / "both" / "fold_results.json").exists()
+    assert (tmp_path / "both" / "aggregated.json").exists()
+ 
+ 
+def test_cv_fold_results_json_is_valid_with_numpy_scalars(tmp_path):
+    fold_results = [
+        {"defect_metrics": {"defect": {"f1": np.float64(0.9), "support": np.int64(41)}}},
+        {"defect_metrics": {"defect": {"f1": np.float64(0.85), "support": np.int64(41)}}},
+    ]
+    aggregated = {"defect_metrics": {"defect": {"f1": {"mean": 0.875, "std": 0.025}}}}
+ 
+    save_cv_results("both", fold_results, aggregated, tmp_path)
+ 
+    with open(tmp_path / "both" / "fold_results.json") as f:
+        loaded = json.load(f)
+ 
+    assert loaded[0]["defect_metrics"]["defect"]["support"] == 41
+ 
+ 
+def test_cv_creates_parent_directories_if_missing(tmp_path):
+    fold_results = [{"defect_metrics": {}}]
+    aggregated = {"defect_metrics": {}}
+    nested_output_dir = tmp_path / "a" / "b" / "c"
+ 
+    save_cv_results("vibration", fold_results, aggregated, nested_output_dir)
+ 
+    assert (nested_output_dir / "vibration" / "fold_results.json").exists()
+ 

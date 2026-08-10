@@ -4,6 +4,10 @@ import math
 import pytest
 import torch
 
+from unittest.mock import MagicMock, patch
+import pandas as pd
+from defect_detection.training.train import train_from_dataframes
+
 from defect_detection.models.fusion_model import MultimodalDefectClassifier
 from defect_detection.training.losses import TwoStageLoss
 from defect_detection.training.train import (
@@ -171,3 +175,81 @@ def test_evaluate_returns_same_keys_as_train_one_epoch(criterion, train_config):
     eval_metrics = evaluate(model, loader, criterion, torch.device("cpu"))
 
     assert set(train_metrics.keys()) == set(eval_metrics.keys())
+
+
+def _fake_train_val_df() -> pd.DataFrame:
+    """A minimal real DataFrame satisfying compute_defect_gate_pos_weight and
+    compute_fault_type_class_weights (all three fault classes present)."""
+    return pd.DataFrame({
+        "is_defect": [0, 0, 0, 0, 0, 1, 1, 1],
+        "fault_class": [None, None, None, None, None, "outer_race", "inner_race", "ball"],
+    })
+ 
+ 
+def _fake_config_side_effect(path: str) -> dict:
+    """Returns minimal, self-contained configs for train_from_dataframes, keyed by
+    the path argument load_yaml_config is called with — avoids depending on the
+    real project config files' current contents (e.g. max_epochs) for test speed
+    and isolation.
+    """
+    if "data_config" in path:
+        return {"window_size": 2048, "cwru": {"sampling_rate_hz": 12000}}
+    if "model_config" in path:
+        return {"image_encoder": {"unfreeze_from": "layer4"}}
+    if "train_config" in path:
+        return {
+            "optimizer": {"lr": 1e-3, "weight_decay": 1e-5, "fine_tune_lr_multiplier": 0.1},
+            "training": {"batch_size": 8, "max_epochs": 2, "early_stopping_patience": 5, "min_delta": 0.0},
+        }
+    raise ValueError(f"Unexpected config path in test: {path}")
+ 
+ 
+def _run_train_from_dataframes_with_mocks(register_model: bool):
+    """Runs train_from_dataframes with every heavy/external dependency mocked,
+    returning the mock objects used for mlflow and mlflow.pytorch so callers can
+    assert on what was (or wasn't) called."""
+    fake_loader_source = make_synthetic_loader(n_samples=8, n_defective=3, batch_size=8)
+    fake_dataset = fake_loader_source.dataset
+    vib_mean = torch.zeros(5).numpy()
+    vib_std = torch.ones(5).numpy()
+ 
+    train_df = _fake_train_val_df()
+    val_df = _fake_train_val_df()
+ 
+    with patch("defect_detection.training.train.load_yaml_config", side_effect=_fake_config_side_effect), \
+         patch("defect_detection.training.train.build_datasets",
+               return_value=(fake_dataset, fake_dataset, vib_mean, vib_std)), \
+         patch("defect_detection.training.train.mlflow") as mock_mlflow, \
+         patch("defect_detection.training.train.pt") as mock_pt:
+ 
+        mock_run = MagicMock()
+        mock_run.info.run_id = "fake_run_id"
+        mock_mlflow.start_run.return_value.__enter__.return_value = mock_run
+ 
+        from defect_detection.training.train import train_from_dataframes
+        train_from_dataframes(
+            train_df, val_df, modality="vibration", register_model=register_model,
+        )
+ 
+    return mock_mlflow, mock_pt
+ 
+ 
+# --- register_model flag --------------------------------------------------------------
+ 
+def test_register_model_false_skips_registration():
+    """register_model=False should skip both model logging and Model Registry
+    registration."""
+    mock_mlflow, mock_pt = _run_train_from_dataframes_with_mocks(register_model=False)
+ 
+    mock_pt.log_model.assert_not_called()
+    mock_mlflow.register_model.assert_not_called()
+ 
+ 
+def test_register_model_true_logs_and_registers():
+    """register_model=True (the default) should log and register the model, as
+    before this flag was introduced."""
+    mock_mlflow, mock_pt = _run_train_from_dataframes_with_mocks(register_model=True)
+ 
+    mock_pt.log_model.assert_called_once()
+    mock_mlflow.register_model.assert_called_once()
+   

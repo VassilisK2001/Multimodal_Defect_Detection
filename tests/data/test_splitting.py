@@ -7,7 +7,11 @@ import pytest
 from scipy.io import loadmat
 
 from defect_detection.data.splitting import (
-    _compute_split_blocks, _get_n_windows, _redraw_window_indices, split_manifest,
+    _compute_split_blocks, 
+    _get_n_windows, 
+    _redraw_window_indices, 
+    generate_stratified_kfold_splits,
+    split_manifest,
 )
 from defect_detection.utils import find_project_root, load_yaml_config
 
@@ -188,3 +192,65 @@ def test_replacement_fallback_triggers_when_block_smaller_than_demand(project_ro
     # val block for n_windows=10, train_frac=0.7, val_frac=0.1 -> block = [7, 8), size 1
     assert result["vibration_window_idx"].nunique() == 1
     assert (result["vibration_window_idx"] == 7).all()
+
+
+def test_kfold_test_sets_partition_the_manifest(manifest_df):
+    """Every sample_id must appear as 'test' in exactly one fold."""
+    k = 3
+    folds = generate_stratified_kfold_splits(manifest_df, k=k, seed=42)
+ 
+    test_id_counts = {}
+    for fold_df in folds:
+        test_ids = fold_df[fold_df.split == "test"]["sample_id"]
+        for sample_id in test_ids:
+            test_id_counts[sample_id] = test_id_counts.get(sample_id, 0) + 1
+ 
+    assert set(test_id_counts.keys()) == set(manifest_df["sample_id"])
+    assert all(count == 1 for count in test_id_counts.values())
+ 
+ 
+def test_kfold_reproducible_with_same_seed(manifest_df):
+    folds_a = generate_stratified_kfold_splits(manifest_df, k=3, seed=123)
+    folds_b = generate_stratified_kfold_splits(manifest_df, k=3, seed=123)
+ 
+    for fold_a, fold_b in zip(folds_a, folds_b):
+        a_sorted = fold_a.sort_values("sample_id").reset_index(drop=True)
+        b_sorted = fold_b.sort_values("sample_id").reset_index(drop=True)
+        pd.testing.assert_frame_equal(a_sorted, b_sorted)
+ 
+ 
+def test_kfold_folds_differ_from_each_other(manifest_df):
+    folds = generate_stratified_kfold_splits(manifest_df, k=3, seed=42)
+ 
+    test_sets = [set(fold_df[fold_df.split == "test"]["sample_id"]) for fold_df in folds]
+ 
+    assert test_sets[0] != test_sets[1]
+    assert test_sets[1] != test_sets[2]
+    assert test_sets[0] != test_sets[2]
+ 
+ 
+def test_kfold_split_sizes_approximately_correct(manifest_df, config):
+    k = 3
+    folds = generate_stratified_kfold_splits(manifest_df, k=k, seed=42)
+    val_frac = config["split"]["val_frac"]
+ 
+    for fold_df in folds:
+        actual_fracs = fold_df["split"].value_counts(normalize=True)
+ 
+        assert abs(actual_fracs["test"] - (1 / k)) < 0.05, (
+            f"test fraction {actual_fracs['test']:.2f} far from expected {1/k:.2f}"
+        )
+        assert abs(actual_fracs["val"] - val_frac) < 0.05, (
+            f"val fraction {actual_fracs['val']:.2f} far from expected {val_frac:.2f}"
+        )
+ 
+ 
+def test_kfold_stratification_balance_within_fold(manifest_df):
+    """is_defect ratio should be similar across train/val/test within each fold."""
+    folds = generate_stratified_kfold_splits(manifest_df, k=3, seed=42)
+ 
+    for fold_idx, fold_df in enumerate(folds):
+        ratios = fold_df.groupby("split")["is_defect"].mean()
+        assert ratios.max() - ratios.min() < 0.05, (
+            f"fold {fold_idx}: is_defect ratio varies too much across splits: {ratios.to_dict()}"
+        )

@@ -30,39 +30,22 @@ from defect_detection.models.batch_utils import forward_batch
 from defect_detection.utils import find_project_root, flatten_dict, load_yaml_config
 
 
-def load_split_dataframes(project_root: Path, config: dict) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Load train/val/test manifest CSVs.
 
-    Args:
-        project_root: Project root path.
-        config: data_config.yaml contents.
-
-    Returns:
-        (train_df, val_df, test_df).
-    """
-    manifest_dir = project_root / config["paths"]["manifest_dir"]
-    train_df = pd.read_csv(manifest_dir / "train.csv")
-    val_df = pd.read_csv(manifest_dir / "val.csv")
-    test_df = pd.read_csv(manifest_dir / "test.csv")
-    return train_df, val_df, test_df
-
-
-def build_datasets(train_df: pd.DataFrame, val_df: pd.DataFrame, test_df: pd.DataFrame,
+def build_datasets(train_df: pd.DataFrame, val_df: pd.DataFrame,
                     window_size: int, fs: int
                     ) -> tuple[MultimodalDefectDataset, MultimodalDefectDataset,
-                               MultimodalDefectDataset, np.ndarray, np.ndarray]:
-    """Build train/val/test Datasets, with vibration features normalized using stats
+                               np.ndarray, np.ndarray]:
+    """Build train/val Datasets, with vibration features normalized using stats
     computed from the training split.
 
     Args:
         train_df: Training split manifest.
         val_df: Validation split manifest.
-        test_df: Test split manifest.
         window_size: Vibration window size in samples.
         fs: Vibration sampling rate in Hz.
 
     Returns:
-        (train_dataset, val_dataset, test_dataset, vib_mean, vib_std).
+        (train_dataset, val_dataset, vib_mean, vib_std).
     """
     raw_train_dataset = MultimodalDefectDataset(train_df, window_size=window_size, fs=fs, training=False)
     vib_mean, vib_std = compute_vibration_feature_stats(raw_train_dataset)
@@ -73,10 +56,7 @@ def build_datasets(train_df: pd.DataFrame, val_df: pd.DataFrame, test_df: pd.Dat
     val_dataset = MultimodalDefectDataset(
         val_df, window_size=window_size, fs=fs, training=False, vib_mean=vib_mean, vib_std=vib_std,
     )
-    test_dataset = MultimodalDefectDataset(
-        test_df, window_size=window_size, fs=fs, training=False, vib_mean=vib_mean, vib_std=vib_std,
-    )
-    return train_dataset, val_dataset, test_dataset, vib_mean, vib_std
+    return train_dataset, val_dataset, vib_mean, vib_std
 
 
 def build_optimizer(model: MultimodalDefectClassifier, train_config: dict) -> torch.optim.Optimizer:
@@ -214,22 +194,27 @@ def evaluate(model: MultimodalDefectClassifier, loader: DataLoader,
     }
 
 
-def train(modality: Modality = "both", experiment_name: str = "defect_detection", seed: int = 42, 
-        unfreeze_from: str | None = None, run_name_suffix: str = ""):
-    """Train a MultimodalDefectClassifier and log the run to MLflow.
+def train_from_dataframes(train_df: pd.DataFrame, val_df: pd.DataFrame, modality: Modality = "both",
+                           experiment_name: str = "defect_detection", seed: int = 42,
+                           unfreeze_from: str | None = None, run_name_suffix: str = "",
+                           register_model: bool = True) -> tuple[MultimodalDefectClassifier, np.ndarray, np.ndarray]:
+    """Train a MultimodalDefectClassifier on given train/val dataframes and log the
+    run to MLflow.
 
     Args:
-       modality: "both", "image", or "vibration" — which encoder(s) feed the model.
+        train_df: Training split manifest.
+        val_df: Validation split manifest.
+        modality: "both", "image", or "vibration".
         experiment_name: MLflow experiment name.
-       seed: Random seed for reproducibility. Should be kept identical across
-            modality runs intended for a fair comparison, since training is
-            otherwise stochastic (weight initialization, batch shuffling).
-       unfreeze_from: Override for the image encoder's freeze boundary.Defaults 
+        seed: Random seed for reproducibility. Should be kept identical across
+            modality runs.
+        unfreeze_from: Override for the image encoder's freeze boundary. Defaults
             to config/model_config.yaml's image_encoder.unfreeze_from if not given.
-       run_name_suffix: Appended to the MLflow run name.
+        run_name_suffix: Appended to the MLflow run name.
+        register_model: If False, skip Model Registry registration.
 
     Returns:
-        The trained model (best early-stopped weights loaded).
+        (model, vib_mean, vib_std).
     """
     torch.manual_seed(seed)
 
@@ -242,16 +227,15 @@ def train(modality: Modality = "both", experiment_name: str = "defect_detection"
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    train_df, val_df, test_df = load_split_dataframes(project_root, data_config)
-
-    train_dataset, val_dataset, test_dataset, vib_mean, vib_std = build_datasets(
-        train_df, val_df, test_df,
-        window_size=data_config["window_size"], fs=data_config["cwru"]["sampling_rate_hz"],
+    train_dataset, val_dataset, vib_mean, vib_std = build_datasets(
+        train_df, val_df, window_size=data_config["window_size"], fs=data_config["cwru"]["sampling_rate_hz"],
     )
 
     batch_size = train_config["training"]["batch_size"]
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True, persistent_workers=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True, persistent_workers=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,
+                               num_workers=4, pin_memory=True, persistent_workers=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False,
+                             num_workers=2, pin_memory=True, persistent_workers=True)
 
     pos_weight = compute_defect_gate_pos_weight(train_df).to(device)
     fault_type_weights = compute_fault_type_class_weights(train_df).to(device)
@@ -350,35 +334,56 @@ def train(modality: Modality = "both", experiment_name: str = "defect_detection"
 
             model.load_state_dict(torch.load(best_checkpoint_path))
             model.eval()
- 
-            sample_images, sample_vib, _, _, _ = next(iter(val_loader))
-            sample_kwargs = {}
-            if model.image_encoder is not None:
-                sample_kwargs["image"] = sample_images.to(device)
-            if model.vibration_encoder is not None:
-                sample_kwargs["vib_features"] = sample_vib.to(device)
- 
-            with torch.no_grad():
-                sample_output = model(**sample_kwargs)
- 
-            input_example = {k: v.cpu().numpy() for k, v in sample_kwargs.items()}
-            output_example = {
-                "defect_logit": sample_output[0].cpu().numpy(),
-                "fault_type_logits": sample_output[1].cpu().numpy(),
-            }
-            signature = infer_signature(input_example, output_example)
- 
-            pt.log_model(
-                model, name="model", signature=signature, input_example=input_example,
-                serialization_format="pickle",
-            )
- 
-            registered_name = f"defect_detection_{modality}"
-            model_uri = f"runs:/{run.info.run_id}/model"
-            mlflow.register_model(model_uri, registered_name)
 
+            if register_model:
+                sample_images, sample_vib, _, _, _ = next(iter(val_loader))
+                sample_kwargs = {}
+                if model.image_encoder is not None:
+                    sample_kwargs["image"] = sample_images.to(device)
+                if model.vibration_encoder is not None:
+                    sample_kwargs["vib_features"] = sample_vib.to(device)
+
+                with torch.no_grad():
+                    sample_output = model(**sample_kwargs)
+
+                input_example = {k: v.cpu().numpy() for k, v in sample_kwargs.items()}
+                output_example = {
+                    "defect_logit": sample_output[0].cpu().numpy(),
+                    "fault_type_logits": sample_output[1].cpu().numpy(),
+                }
+                signature = infer_signature(input_example, output_example)
+
+                pt.log_model(
+                    model, name="model", signature=signature, input_example=input_example,
+                    serialization_format="pickle",
+                )
+
+                registered_name = f"defect_detection_{modality}"
+                model_uri = f"runs:/{run.info.run_id}/model"
+                mlflow.register_model(model_uri, registered_name)
+
+    return model, vib_mean, vib_std
+
+
+def train(modality: Modality = "both", experiment_name: str = "defect_detection", seed: int = 42,
+          unfreeze_from: str | None = None, run_name_suffix: str = "") -> MultimodalDefectClassifier:
+    """Official entry point: loads train.csv/val.csv from disk, then delegates to
+    train_from_dataframes().
+
+    Returns:
+        The trained model (best early-stopped weights loaded).
+    """
+    project_root = find_project_root()
+    data_config = load_yaml_config("config/data_config.yaml")
+    manifest_dir = project_root / data_config["paths"]["manifest_dir"]
+    train_df = pd.read_csv(manifest_dir / "train.csv")
+    val_df = pd.read_csv(manifest_dir / "val.csv")
+
+    model, _, _ = train_from_dataframes(
+        train_df, val_df, modality=modality, experiment_name=experiment_name,
+        seed=seed, unfreeze_from=unfreeze_from, run_name_suffix=run_name_suffix,
+    )
     return model
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

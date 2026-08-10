@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from scipy.io import loadmat
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedKFold
  
 from defect_detection.utils import find_project_root, load_yaml_config
 
@@ -89,7 +90,76 @@ def _redraw_window_indices(df: pd.DataFrame, project_root: Path, window_size: in
         df.loc[group.index, "vibration_window_idx"] = drawn_indices
  
     return df
+
+
+def _assign_train_val_given_test(manifest_df: pd.DataFrame, test_idx: np.ndarray,
+                                  val_frac: float, seed: int) -> pd.DataFrame:
+    """Label rows train/val/test given a fixed set of test row indices.
  
+    The remaining rows are stratified-split into train/val on the same
+    is_defect + fault_class key used elsewhere in this module.
+ 
+    Args:
+        manifest_df: The full manifest.
+        test_idx: Row indices to label as "test".
+        val_frac: Target validation fraction, relative to the full dataset.
+        seed: Random seed for the train/val split.
+ 
+    Returns:
+        manifest_df with a new 'split' column ('train'/'val'/'test').
+    """
+    df = manifest_df.copy()
+    df["strat_key"] = df["is_defect"].astype(str) + "_" + df["fault_class"]
+ 
+    df["split"] = "train"
+    df.loc[test_idx, "split"] = "test"
+ 
+    test_frac_actual = len(test_idx) / len(df)
+    relative_val_frac = val_frac / (1 - test_frac_actual)
+ 
+    train_val_df = df[df["split"] == "train"]
+    _, val_df = train_test_split(
+        train_val_df, test_size=relative_val_frac, stratify=train_val_df["strat_key"],
+        random_state=seed,
+    )
+    df.loc[val_df.index, "split"] = "val"
+ 
+    return df.drop(columns=["strat_key"])
+
+
+def generate_stratified_kfold_splits(manifest_df: pd.DataFrame, k: int = 3,
+                                      seed: int = 42) -> list[pd.DataFrame]:
+    """Generate k stratified, file-leakage-aware folds for cross-validation.
+ 
+    Args:
+        manifest_df: The full manifest (all rows, unsplit).
+        k: Number of folds.
+        seed: Base random seed. Fold i uses seed + i internally.
+ 
+    Returns:
+        A list of k dataframes, each with 'split' and corrected
+        'vibration_window_idx' columns, in the same format as split_manifest().
+    """
+    config = load_yaml_config("config/data_config.yaml")
+    project_root = find_project_root()
+    window_size = config["window_size"]
+    train_frac = config["split"]["train_frac"]
+    val_frac = config["split"]["val_frac"]
+ 
+    strat_key = manifest_df["is_defect"].astype(str) + "_" + manifest_df["fault_class"]
+    skf = StratifiedKFold(n_splits=k, shuffle=True, random_state=seed)
+ 
+    fold_dfs = []
+    for fold_idx, (_, test_idx) in enumerate(skf.split(manifest_df, strat_key)):
+        fold_seed = seed + fold_idx
+        rng = np.random.default_rng(fold_seed)
+ 
+        fold_df = _assign_train_val_given_test(manifest_df, test_idx, val_frac=val_frac, seed=fold_seed)
+        fold_df = _redraw_window_indices(fold_df, project_root, window_size, rng,
+                                          train_frac=train_frac, val_frac=val_frac)
+        fold_dfs.append(fold_df.reset_index(drop=True))
+ 
+    return fold_dfs
  
 def split_manifest(manifest_df: pd.DataFrame, seed: int = 42) -> pd.DataFrame:
     """Full split pipeline: stratified image-level split, then split-aware window

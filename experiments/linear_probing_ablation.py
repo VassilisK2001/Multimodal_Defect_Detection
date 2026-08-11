@@ -14,4 +14,5 @@ if __name__ == "__main__":
         seed=args.seed,
         unfreeze_from="fc",
         run_name_suffix="_linear_probe",
+        register_model=False,
     )

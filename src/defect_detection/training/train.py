@@ -366,7 +366,7 @@ def train_from_dataframes(train_df: pd.DataFrame, val_df: pd.DataFrame, modality
 
 
 def train(modality: Modality = "both", experiment_name: str = "defect_detection", seed: int = 42,
-          unfreeze_from: str | None = None, run_name_suffix: str = "") -> MultimodalDefectClassifier:
+          unfreeze_from: str | None = None, register_model: bool = True, run_name_suffix: str = "") -> MultimodalDefectClassifier:
     """Official entry point: loads train.csv/val.csv from disk, then delegates to
     train_from_dataframes().
 
@@ -382,6 +382,7 @@ def train(modality: Modality = "both", experiment_name: str = "defect_detection"
     model, _, _ = train_from_dataframes(
         train_df, val_df, modality=modality, experiment_name=experiment_name,
         seed=seed, unfreeze_from=unfreeze_from, run_name_suffix=run_name_suffix,
+         register_model=register_model,
     )
     return model
 

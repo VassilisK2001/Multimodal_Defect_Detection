@@ -160,7 +160,85 @@ def generate_stratified_kfold_splits(manifest_df: pd.DataFrame, k: int = 3,
         fold_dfs.append(fold_df.reset_index(drop=True))
  
     return fold_dfs
- 
+
+def select_files_to_hold_out(manifest_df: pd.DataFrame, seed: int = 42) -> dict[str, str]:
+    """Pick one vibration_file per fault_class to hold out entirely, deterministically
+    given seed.
+
+    Args:
+        manifest_df: The full manifest.
+        seed: Random seed for file selection.
+
+    Returns:
+        A dict mapping fault_class to the vibration_file chosen to hold out.
+    """
+    rng = np.random.default_rng(seed)
+    defective = manifest_df[manifest_df.is_defect == 1]
+
+    held_out = {}
+    for fault_class, group in defective.groupby("fault_class"):
+        files = sorted(group["vibration_file"].unique())
+        held_out[fault_class] = rng.choice(files)
+    return held_out
+
+
+def _redraw_full_range_indices(df: pd.DataFrame, project_root: Path, window_size: int,
+                                rng: np.random.Generator) -> pd.DataFrame:
+    """Redraw vibration_window_idx across a file's full window range."""
+    df = df.copy()
+    n_windows_cache: dict[str, int] = {}
+
+    for vib_file, group in df.groupby("vibration_file"):
+        if vib_file not in n_windows_cache:
+            n_windows_cache[vib_file] = _get_n_windows(project_root / vib_file, window_size)
+        n_windows = n_windows_cache[vib_file]
+
+        drawn = rng.choice(np.arange(n_windows), size=len(group), replace=len(group) > n_windows)
+        df.loc[group.index, "vibration_window_idx"] = drawn
+
+    return df
+
+
+def build_leave_file_out_split(manifest_df: pd.DataFrame, held_out_files: dict[str, str],
+                                seed: int = 42) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Build train/val/held-out-test splits for the leave-file-out diagnostic.
+
+    Args:
+        manifest_df: The full manifest.
+        held_out_files: fault_class map to vibration_file to hold out
+        seed: Random seed.
+
+    Returns:
+        (train_df, val_df, held_out_test_df).
+    """
+    config = load_yaml_config("config/data_config.yaml")
+    project_root = find_project_root()
+    window_size = config["window_size"]
+    train_frac = config["split"]["train_frac"]
+    val_frac = config["split"]["val_frac"]
+
+    held_out_set = set(held_out_files.values())
+    is_held_out = manifest_df["vibration_file"].isin(held_out_set)
+
+    train_val_pool = manifest_df[~is_held_out].reset_index(drop=True)
+    held_out_df = manifest_df[is_held_out].reset_index(drop=True)
+
+    train_val_df = _assign_train_val_given_test(
+        train_val_pool, test_idx=np.array([], dtype=int), val_frac=val_frac, seed=seed,
+    )
+    rng = np.random.default_rng(seed)
+    train_val_df = _redraw_window_indices(train_val_df, project_root, window_size, rng,
+                                           train_frac=train_frac, val_frac=val_frac)
+
+    held_out_df = held_out_df.assign(split="test")
+    held_out_df = _redraw_full_range_indices(held_out_df, project_root, window_size,
+                                              np.random.default_rng(seed + 1))
+
+    train_df = train_val_df[train_val_df.split == "train"].reset_index(drop=True)
+    val_df = train_val_df[train_val_df.split == "val"].reset_index(drop=True)
+    return train_df, val_df, held_out_df
+
+
 def split_manifest(manifest_df: pd.DataFrame, seed: int = 42) -> pd.DataFrame:
     """Full split pipeline: stratified image-level split, then split-aware window
     index redraw. Returns the manifest with 'split' and corrected 'vibration_window_idx' 

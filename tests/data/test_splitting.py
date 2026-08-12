@@ -12,6 +12,9 @@ from defect_detection.data.splitting import (
     _redraw_window_indices, 
     generate_stratified_kfold_splits,
     split_manifest,
+    select_files_to_hold_out,
+    build_leave_file_out_split,
+    _redraw_full_range_indices
 )
 from defect_detection.utils import find_project_root, load_yaml_config
 
@@ -254,3 +257,65 @@ def test_kfold_stratification_balance_within_fold(manifest_df):
         assert ratios.max() - ratios.min() < 0.05, (
             f"fold {fold_idx}: is_defect ratio varies too much across splits: {ratios.to_dict()}"
         )
+
+
+def test_select_files_returns_one_valid_file_per_fault_class(manifest_df):
+    """Should return exactly one held-out file per fault class, and each file must
+    belong to that class."""
+    held_out = select_files_to_hold_out(manifest_df, seed=42)
+ 
+    assert set(held_out.keys()) == {"outer_race", "inner_race", "ball"}
+ 
+    for fault_class, vib_file in held_out.items():
+        actual_classes = manifest_df[manifest_df.vibration_file == vib_file]["fault_class"].unique()
+        assert list(actual_classes) == [fault_class]
+ 
+ 
+def test_select_files_reproducible_with_same_seed(manifest_df):
+    held_out_a = select_files_to_hold_out(manifest_df, seed=123)
+    held_out_b = select_files_to_hold_out(manifest_df, seed=123)
+ 
+    assert held_out_a == held_out_b
+ 
+  
+def test_redraw_full_range_not_restricted_to_a_block(project_root, config, monkeypatch):
+    """Drawn indices should span the file's entire window range, not a
+    train/val/test block boundary."""
+    window_size = config["window_size"]
+ 
+    monkeypatch.setattr("defect_detection.data.splitting._get_n_windows", lambda mat_path, ws: 10)
+ 
+    fake_df = pd.DataFrame({
+        "vibration_file": ["fake_file.mat"] * 20,
+        "vibration_window_idx": [-1] * 20,
+    })
+ 
+    rng = np.random.default_rng(0)
+    result = _redraw_full_range_indices(fake_df, project_root, window_size, rng)
+ 
+    # With only 10 total windows, indices covering the full [0, 10) range should appear.
+    assert result["vibration_window_idx"].min() < 7
+    assert result["vibration_window_idx"].max() <= 9
+ 
+  
+def test_held_out_files_never_appear_in_train_or_val(manifest_df):
+    held_out_files = select_files_to_hold_out(manifest_df, seed=42)
+    train_df, val_df, held_out_test_df = build_leave_file_out_split(manifest_df, held_out_files, seed=42)
+ 
+    held_out_set = set(held_out_files.values())
+ 
+    assert not set(train_df["vibration_file"]) & held_out_set
+    assert not set(val_df["vibration_file"]) & held_out_set
+    assert set(held_out_test_df["vibration_file"]) <= held_out_set
+ 
+ 
+def test_build_leave_file_out_split_preserves_all_rows_no_duplicates(manifest_df):
+    held_out_files = select_files_to_hold_out(manifest_df, seed=42)
+    train_df, val_df, held_out_test_df = build_leave_file_out_split(manifest_df, held_out_files, seed=42)
+ 
+    combined_ids = (
+        set(train_df["sample_id"]) | set(val_df["sample_id"]) | set(held_out_test_df["sample_id"])
+    )
+    assert combined_ids == set(manifest_df["sample_id"])
+    assert len(train_df) + len(val_df) + len(held_out_test_df) == len(manifest_df)
+ 

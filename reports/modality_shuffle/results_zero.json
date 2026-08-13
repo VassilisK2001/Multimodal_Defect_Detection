@@ -1,0 +1,119 @@
+{
+  "baseline": {
+    "defect_metrics": {
+      "normal": {
+        "precision": 0.9815950920245399,
+        "recall": 0.9937888198757764,
+        "f1": 0.9876543209876544,
+        "support": 161
+      },
+      "defect": {
+        "precision": 0.9743589743589743,
+        "recall": 0.926829268292683,
+        "f1": 0.9500000000000001,
+        "support": 41
+      }
+    },
+    "fault_metrics": {
+      "per_class": {
+        "outer_race": {
+          "precision": 0.7647058823529411,
+          "recall": 0.7647058823529411,
+          "f1": 0.7647058823529412,
+          "support": 17
+        },
+        "inner_race": {
+          "precision": 1.0,
+          "recall": 0.7857142857142857,
+          "f1": 0.88,
+          "support": 14
+        },
+        "ball": {
+          "precision": 0.6923076923076923,
+          "recall": 0.9,
+          "f1": 0.7826086956521738,
+          "support": 10
+        }
+      },
+      "macro_f1": 0.8091048593350383
+    }
+  },
+  "image_corrupted": {
+    "defect_metrics": {
+      "normal": {
+        "precision": 1.0,
+        "recall": 0.9316770186335404,
+        "f1": 0.9646302250803859,
+        "support": 161
+      },
+      "defect": {
+        "precision": 0.7884615384615384,
+        "recall": 1.0,
+        "f1": 0.8817204301075269,
+        "support": 41
+      }
+    },
+    "fault_metrics": {
+      "per_class": {
+        "outer_race": {
+          "precision": 0.5666666666666667,
+          "recall": 1.0,
+          "f1": 0.7234042553191489,
+          "support": 17
+        },
+        "inner_race": {
+          "precision": 0.6363636363636364,
+          "recall": 0.5,
+          "f1": 0.56,
+          "support": 14
+        },
+        "ball": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 10
+        }
+      },
+      "macro_f1": 0.4278014184397163
+    }
+  },
+  "vibration_corrupted": {
+    "defect_metrics": {
+      "normal": {
+        "precision": 0.9253731343283582,
+        "recall": 0.7701863354037267,
+        "f1": 0.8406779661016948,
+        "support": 161
+      },
+      "defect": {
+        "precision": 0.45588235294117646,
+        "recall": 0.7560975609756098,
+        "f1": 0.5688073394495413,
+        "support": 41
+      }
+    },
+    "fault_metrics": {
+      "per_class": {
+        "outer_race": {
+          "precision": 0.6153846153846154,
+          "recall": 0.47058823529411764,
+          "f1": 0.5333333333333333,
+          "support": 17
+        },
+        "inner_race": {
+          "precision": 1.0,
+          "recall": 0.5714285714285714,
+          "f1": 0.7272727272727273,
+          "support": 14
+        },
+        "ball": {
+          "precision": 0.45,
+          "recall": 0.9,
+          "f1": 0.6,
+          "support": 10
+        }
+      },
+      "macro_f1": 0.6202020202020203
+    }
+  }
+}

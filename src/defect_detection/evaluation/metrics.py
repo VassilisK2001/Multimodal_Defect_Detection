@@ -53,3 +53,22 @@ def compute_fault_type_metrics(y_true: np.ndarray, y_pred: np.ndarray,
         for i in range(len(class_names))
     }
     return {"per_class": per_class, "macro_f1": float(f1.mean())}
+
+def compute_metrics_from_predictions(predictions: dict, class_names: list[str]) -> dict:
+    """Compute defect-gate and fault-type metrics from a predictions dict.
+ 
+    Args:
+        predictions: A dict with returned predictions.
+        class_names: Fault class names, in index order.
+ 
+    Returns:
+        Dict with "defect_metrics" and "fault_metrics".
+    """
+    return {
+        "defect_metrics": compute_defect_gate_metrics(
+            predictions["is_defect_true"], predictions["is_defect_pred"],
+        ),
+        "fault_metrics": compute_fault_type_metrics(
+            predictions["fault_class_true"], predictions["fault_class_pred"], class_names,
+        ),
+    }

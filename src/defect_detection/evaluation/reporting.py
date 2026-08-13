@@ -51,3 +51,17 @@ def save_cv_results(modality: str, fold_results: list[dict], aggregated: dict, o
 
     with open(modality_dir / "aggregated.json", "w", encoding="utf-8") as f:
         json.dump(aggregated, f, indent=2, default=json_numpy_default)
+
+
+def save_modality_shuffle_results(results: dict, output_dir: Path, method: str = "shuffle") -> None:
+    """Save modality shuffle test results to output_dir/results_<method>.json.
+ 
+    Args:
+        results: The dict returned by run_modality_shuffle_test().
+        output_dir: Directory to save to.
+        method: Corruption method used ("shuffle" or "zero").
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+ 
+    with open(output_dir / f"results_{method}.json", "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2, default=json_numpy_default)

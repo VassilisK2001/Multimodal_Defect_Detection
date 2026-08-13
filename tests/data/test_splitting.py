@@ -258,17 +258,21 @@ def test_kfold_stratification_balance_within_fold(manifest_df):
             f"fold {fold_idx}: is_defect ratio varies too much across splits: {ratios.to_dict()}"
         )
 
-
-def test_select_files_returns_one_valid_file_per_fault_class(manifest_df):
-    """Should return exactly one held-out file per fault class, and each file must
-    belong to that class."""
+def test_select_files_returns_one_valid_file_per_group(manifest_df):
+    """Should return exactly one held-out file per fault class plus one normal
+    file."""
     held_out = select_files_to_hold_out(manifest_df, seed=42)
- 
-    assert set(held_out.keys()) == {"outer_race", "inner_race", "ball"}
- 
-    for fault_class, vib_file in held_out.items():
+
+    assert set(held_out.keys()) == {"outer_race", "inner_race", "ball", "normal"}
+
+    for fault_class in ("outer_race", "inner_race", "ball"):
+        vib_file = held_out[fault_class]
         actual_classes = manifest_df[manifest_df.vibration_file == vib_file]["fault_class"].unique()
         assert list(actual_classes) == [fault_class]
+
+    normal_file = held_out["normal"]
+    actual_is_defect = manifest_df[manifest_df.vibration_file == normal_file]["is_defect"].unique()
+    assert list(actual_is_defect) == [0]
  
  
 def test_select_files_reproducible_with_same_seed(manifest_df):

@@ -162,23 +162,29 @@ def generate_stratified_kfold_splits(manifest_df: pd.DataFrame, k: int = 3,
     return fold_dfs
 
 def select_files_to_hold_out(manifest_df: pd.DataFrame, seed: int = 42) -> dict[str, str]:
-    """Pick one vibration_file per fault_class to hold out entirely, deterministically
-    given seed.
-
+    """Pick one vibration_file per fault_class, plus one normal (non-defective)
+    file, to hold out entirely, deterministically given seed.
+ 
     Args:
         manifest_df: The full manifest.
         seed: Random seed for file selection.
-
+ 
     Returns:
-        A dict mapping fault_class to the vibration_file chosen to hold out.
+        A dict mapping "outer_race"/"inner_race"/"ball"/"normal" to the
+        vibration_file chosen to hold out for that group.
     """
     rng = np.random.default_rng(seed)
-    defective = manifest_df[manifest_df.is_defect == 1]
-
     held_out = {}
+ 
+    defective = manifest_df[manifest_df.is_defect == 1]
     for fault_class, group in defective.groupby("fault_class"):
         files = sorted(group["vibration_file"].unique())
         held_out[fault_class] = rng.choice(files)
+ 
+    normal = manifest_df[manifest_df.is_defect == 0]
+    normal_files = sorted(normal["vibration_file"].unique())
+    held_out["normal"] = rng.choice(normal_files)
+ 
     return held_out
 
 

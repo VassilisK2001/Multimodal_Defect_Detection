@@ -1,4 +1,3 @@
-
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -27,16 +26,20 @@ def collect_test_predictions(model: MultimodalDefectClassifier, loader: DataLoad
             fault_class_true: (M,) int array, defective samples only.
             fault_class_pred: (M,) int array, argmax predictions, defective
                 samples only.
+            fault_class_proba: (M, num_fault_classes) float array, softmax
+                probabilities per class, defective samples only.
     """
     model.eval()
 
     is_defect_true, is_defect_pred, defect_proba = [], [], []
-    fault_class_true, fault_class_pred = [], []
+    fault_class_true, fault_class_pred, fault_class_proba = [], [], []
+    num_fault_classes = 0
 
     for batch in loader:
         defect_logit, fault_type_logits, is_defect, fault_class_idx = forward_batch(
             model, batch, device,
         )
+        num_fault_classes = fault_type_logits.shape[1]
 
         proba = torch.sigmoid(defect_logit.squeeze(1)).cpu().numpy()
         preds = (proba >= defect_threshold).astype(int)
@@ -47,8 +50,12 @@ def collect_test_predictions(model: MultimodalDefectClassifier, loader: DataLoad
 
         defect_mask = is_defect.bool()
         if defect_mask.sum() > 0:
-            fault_preds = fault_type_logits[defect_mask].argmax(dim=1).cpu().numpy()
+            fault_logits_masked = fault_type_logits[defect_mask]
+            fault_preds = fault_logits_masked.argmax(dim=1).cpu().numpy()
+            fault_proba = torch.softmax(fault_logits_masked, dim=1).cpu().numpy()
+
             fault_class_pred.append(fault_preds)
+            fault_class_proba.append(fault_proba)
             fault_class_true.append(fault_class_idx[defect_mask].cpu().numpy())
 
     return {
@@ -57,4 +64,7 @@ def collect_test_predictions(model: MultimodalDefectClassifier, loader: DataLoad
         "defect_proba": np.concatenate(defect_proba),
         "fault_class_true": np.concatenate(fault_class_true) if fault_class_true else np.array([], dtype=int),
         "fault_class_pred": np.concatenate(fault_class_pred) if fault_class_pred else np.array([], dtype=int),
+        "fault_class_proba": (
+            np.concatenate(fault_class_proba) if fault_class_proba else np.empty((0, num_fault_classes))
+        ),
     }

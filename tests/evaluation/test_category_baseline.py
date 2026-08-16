@@ -65,8 +65,6 @@ def test_handles_unseen_category_in_test_set():
     assert "macro_f1" in result
 
 
-# --- Class ordering --------------------------------------------------------------------------
-
 def test_predictions_respect_class_names_order():
     """Predictions should be correctly labeled under a non-default class_names
     order, not shifted to the wrong class."""
@@ -87,11 +85,9 @@ def test_predictions_respect_class_names_order():
     assert result["per_class"]["ball"]["recall"] > 0.9
 
 
-# --- predict_category_only_baseline -----------------------------------------------------
-
 def test_predict_returns_arrays_aligned_with_defective_rows():
     """Returned y_test/y_pred must correspond, in order, to test_df's defective
-    rows only — compare_predictions_by_category depends on this alignment."""
+    rows only."""
     train_df = pd.DataFrame([
         _manifest_row("bottle", 1, "outer_race"),
         _manifest_row("screw", 1, "ball"),
@@ -105,11 +101,9 @@ def test_predict_returns_arrays_aligned_with_defective_rows():
 
     y_test, y_pred = predict_category_only_baseline(train_df, test_df, CLASS_NAMES)
 
-    assert len(y_test) == 2  # only the 2 defective rows
+    assert len(y_test) == 2  
     assert len(y_pred) == 2
 
-
-# --- compare_predictions_by_category ------------------------------------------------------
 
 def _category_test_df() -> pd.DataFrame:
     return pd.DataFrame([
@@ -121,8 +115,8 @@ def _category_test_df() -> pd.DataFrame:
 def test_per_category_accuracy_is_correct():
     test_df = _category_test_df()
     y_true = np.array([0, 0, 0, 2, 2])
-    category_pred = np.array([0, 1, 1, 2, 2])  # bottle: 1/3 correct; screw: 2/2 correct
-    both_pred = np.array([0, 1, 0, 2, 1])       # bottle: 2/3 correct; screw: 1/2 correct
+    category_pred = np.array([0, 1, 1, 2, 2])  
+    both_pred = np.array([0, 1, 0, 2, 1])       
 
     result = compare_predictions_by_category(test_df, y_true, both_pred, category_pred)
 

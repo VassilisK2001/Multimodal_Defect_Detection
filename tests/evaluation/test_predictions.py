@@ -1,4 +1,3 @@
-
 import numpy as np
 import pytest
 import torch
@@ -16,7 +15,7 @@ def test_returns_expected_keys():
 
     assert set(result.keys()) == {
         "is_defect_true", "is_defect_pred", "defect_proba",
-        "fault_class_true", "fault_class_pred",
+        "fault_class_true", "fault_class_pred", "fault_class_proba",
     }
 
 
@@ -24,7 +23,7 @@ def test_array_lengths_match_full_dataset_across_multiple_batches():
     """Array lengths should equal the full dataset size, correctly aggregated
     across multiple DataLoader batches."""
     n_samples = 25
-    batch_size = 8  # forces 4 batches (8, 8, 8, 1)
+    batch_size = 8 
     model = MultimodalDefectClassifier(modality="both")
     loader = make_synthetic_loader(n_samples=n_samples, n_defective=10, batch_size=batch_size)
 
@@ -47,6 +46,30 @@ def test_fault_class_arrays_length_matches_total_defective_count():
 
     assert len(result["fault_class_true"]) == n_defective
     assert len(result["fault_class_pred"]) == n_defective
+    assert result["fault_class_proba"].shape == (n_defective, 3)
+
+
+def test_fault_class_proba_rows_sum_to_one():
+    """fault_class_proba should be softmax output, each row must sum to ~1.0,
+    not raw logits."""
+    model = MultimodalDefectClassifier(modality="both")
+    loader = make_synthetic_loader(n_samples=8, n_defective=3)
+
+    result = collect_test_predictions(model, loader, torch.device("cpu"))
+
+    row_sums = result["fault_class_proba"].sum(axis=1)
+    assert np.allclose(row_sums, 1.0)
+
+
+def test_fault_class_pred_matches_argmax_of_proba():
+    """fault_class_pred should be the argmax of fault_class_proba."""
+    model = MultimodalDefectClassifier(modality="both")
+    loader = make_synthetic_loader(n_samples=8, n_defective=3)
+
+    result = collect_test_predictions(model, loader, torch.device("cpu"))
+
+    expected_pred = result["fault_class_proba"].argmax(axis=1)
+    assert np.array_equal(result["fault_class_pred"], expected_pred)
 
 
 def test_is_defect_pred_matches_thresholded_proba():
@@ -87,6 +110,7 @@ def test_handles_zero_defective_samples():
     assert len(result["fault_class_true"]) == 0
     assert len(result["fault_class_pred"]) == 0
     assert np.issubdtype(result["fault_class_true"].dtype, np.integer)
+    assert result["fault_class_proba"].shape == (0, 3)
 
 
 

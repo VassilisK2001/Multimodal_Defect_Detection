@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import shap
 from scipy.ndimage import zoom
 
 from defect_detection.interpretability.gradcam import GradCAM
@@ -152,4 +153,68 @@ def plot_fault_type_gradcam_grid(model, dataset, fault_examples: dict,
 
     fig.suptitle("Grad-CAM: Fault Type (explaining the predicted class)", fontsize=14)
     fig.tight_layout(rect=(0, 0, 1, 0.97))
+    return fig
+
+
+def plot_beeswarm_comparison(vib_shap_values: shap.Explanation, fusion_shap_values: shap.Explanation,
+                              title: str = "") -> plt.Figure:
+    """Plot vibration-only and fusion beeswarm plots side by side.
+ 
+    Args:
+        vib_shap_values: SHAP values for the vibration-only model.
+        fusion_shap_values: SHAP values for the fusion model.
+        title: Overall figure title.
+ 
+    Returns:
+        A matplotlib Figure with 2 subplots.
+    """
+    fig, (ax_vib, ax_fusion) = plt.subplots(1, 2, figsize=(14, 5))
+ 
+    plt.sca(ax_vib)
+    shap.summary_plot(vib_shap_values, show=False, plot_size=None)
+    ax_vib.set_title("Vibration-only")
+ 
+    plt.sca(ax_fusion)
+    shap.summary_plot(fusion_shap_values, show=False, plot_size=None)
+    ax_fusion.set_title("Fusion (both)")
+ 
+    fig.suptitle(title, fontsize=14)
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    return fig
+ 
+ 
+def plot_dependence(shap_values: shap.Explanation, feature_name: str, title: str = "") -> plt.Figure:
+    """Plot a SHAP dependence plot for one feature, on raw (unnormalized) values.
+ 
+    Args:
+        shap_values: SHAP values with raw feature values attached via `data`.
+        feature_name: Which feature to plot (must be in shap_values.feature_names).
+        title: Plot title.
+ 
+    Returns:
+        A matplotlib Figure.
+    """
+    fig, ax = plt.subplots(figsize=(6, 5))
+    shap.dependence_plot(feature_name, shap_values.values, shap_values.data,
+                          feature_names=shap_values.feature_names, ax=ax, show=False)
+    ax.set_title(title)
+    fig.tight_layout()
+    return fig
+ 
+ 
+def plot_waterfall(shap_values: shap.Explanation, row_index: int, title: str = "") -> plt.Figure:
+    """Plot a SHAP waterfall plot for one specific test instance.
+ 
+    Args:
+        shap_values: SHAP values for a full test subset.
+        row_index: Which row (within shap_values) to plot.
+        title: Plot title.
+ 
+    Returns:
+        A matplotlib Figure.
+    """
+    fig = plt.figure(figsize=(8, 5))
+    shap.waterfall_plot(shap_values[row_index], show=False)
+    fig.suptitle(title)
+    fig.tight_layout()
     return fig

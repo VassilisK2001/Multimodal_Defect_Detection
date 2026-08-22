@@ -1,7 +1,11 @@
 import numpy as np
+import pandas as pd
 from scipy.signal import stft
 from scipy.stats import kurtosis
+from scipy.io import loadmat
+from defect_detection.utils import find_project_root
 
+FEATURE_NAMES = ["RMS", "Peak", "Crest Factor", "Spectral Kurtosis", "TKEO"]
 
 def rms(x: np.ndarray) -> float:
     return float(np.sqrt(np.mean(x ** 2)))
@@ -38,3 +42,32 @@ def extract_features(window: np.ndarray, fs: int = 12000) -> np.ndarray:
         spectral_kurtosis(window, fs=fs),
         tkeo_energy(window),
     ], dtype=np.float32)
+
+def extract_raw_vib_features_from_df(df: pd.DataFrame, window_size: int, fs: int) -> np.ndarray:
+    """Extract raw (unnormalized) vibration features for a set of manifest rows.
+ 
+    Args:
+        df: Manifest rows, with 'vibration_file' and 'vibration_window_idx' columns.
+        window_size: Vibration window size in samples.
+        fs: Vibration sampling rate in Hz.
+ 
+    Returns:
+        (len(df), 5) raw feature array, in df's row order.
+    """
+    project_root = find_project_root()
+    mat_cache: dict[str, np.ndarray] = {}
+    all_features = []
+ 
+    for _, row in df.iterrows():
+        if row.vibration_file not in mat_cache:
+            mat_path = project_root / row.vibration_file
+            mat = loadmat(mat_path)
+            de_key = [k for k in mat.keys() if "DE_time" in k][0]
+            mat_cache[row.vibration_file] = mat[de_key].flatten()
+        signal = mat_cache[row.vibration_file]
+ 
+        start = row.vibration_window_idx * window_size
+        window = signal[start:start + window_size].astype(np.float32)
+        all_features.append(extract_features(window, fs=fs))
+ 
+    return np.stack(all_features, axis=0)

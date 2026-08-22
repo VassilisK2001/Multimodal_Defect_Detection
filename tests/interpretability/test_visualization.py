@@ -13,6 +13,8 @@ from defect_detection.interpretability.visualization import (
     plot_beeswarm_comparison,
     plot_dependence,
     plot_waterfall,
+    plot_branch_contribution_scatter,
+    plot_branch_contribution_violin,
 )
 from defect_detection.models.fusion_model import MultimodalDefectClassifier
 
@@ -192,4 +194,59 @@ def test_waterfall_raises_for_out_of_range_row_index():
  
     with pytest.raises(IndexError):
         plot_waterfall(shap_values, row_index=99)
+
+ 
+def test_scatter_correctly_separates_points_by_label():
+    phi_image = np.array([0.1, 0.2, -0.1, -0.2, 0.3])
+    phi_vib = np.array([0.5, 0.6, -0.5, -0.6, 0.1])
+    labels = np.array(["a", "a", "b", "b", "a"])
+ 
+    fig = plot_branch_contribution_scatter(phi_image, phi_vib, labels)
+ 
+    scatter_collections = {
+        coll.get_label(): coll for coll in fig.axes[0].collections
+        if coll.get_label() in ("a", "b")
+    }
+    assert set(scatter_collections.keys()) == {"a", "b"}
+ 
+    offsets_a = scatter_collections["a"].get_offsets()
+    expected_a = np.column_stack([phi_image[labels == "a"], phi_vib[labels == "a"]])
+    assert np.allclose(sorted(offsets_a.tolist()), sorted(expected_a.tolist()))
+ 
+ 
+def test_scatter_includes_equal_contribution_reference_line():
+    phi_image = np.array([0.1, 0.2, 0.3])
+    phi_vib = np.array([0.1, 0.2, 0.3])
+    labels = np.array(["a", "a", "a"])
+ 
+    fig = plot_branch_contribution_scatter(phi_image, phi_vib, labels)
+ 
+    reference_lines = [line for line in fig.axes[0].get_lines() if line.get_linestyle() == "--"]
+    assert len(reference_lines) >= 1
+    x_data, y_data = reference_lines[0].get_xdata(), reference_lines[0].get_ydata()
+    assert np.allclose(x_data, y_data)  # slope-1 diagonal
+ 
+  
+def test_violin_produces_correct_number_of_subplots_and_titles():
+    class_names = ["outer_race", "inner_race", "ball"]
+    phi_image_per_class = {name: np.random.randn(10) for name in class_names}
+    phi_vib_per_class = {name: np.random.randn(10) for name in class_names}
+ 
+    fig = plot_branch_contribution_violin(phi_image_per_class, phi_vib_per_class, class_names)
+ 
+    assert len(fig.axes) == 3
+    assert [ax.get_title() for ax in fig.axes] == class_names
+ 
+ 
+def test_violin_handles_single_class_without_crashing():
+    """Regression test for the len(class_names) == 1 edge case."""
+    class_names = ["ball"]
+    phi_image_per_class = {"ball": np.random.randn(10)}
+    phi_vib_per_class = {"ball": np.random.randn(10)}
+ 
+    fig = plot_branch_contribution_violin(phi_image_per_class, phi_vib_per_class, class_names)
+ 
+    assert len(fig.axes) == 1
+    assert fig.axes[0].get_title() == "ball"
+ 
  

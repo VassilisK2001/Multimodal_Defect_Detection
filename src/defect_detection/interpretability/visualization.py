@@ -6,6 +6,7 @@ from scipy.ndimage import zoom
 
 from defect_detection.interpretability.gradcam import GradCAM
 
+
 IMAGENET_MEAN = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
 IMAGENET_STD = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
 
@@ -218,3 +219,68 @@ def plot_waterfall(shap_values: shap.Explanation, row_index: int, title: str = "
     fig.suptitle(title)
     fig.tight_layout()
     return fig
+
+
+def plot_branch_contribution_scatter(phi_image: np.ndarray, phi_vib: np.ndarray,
+                                      labels: np.ndarray, title: str = "") -> plt.Figure:
+    """Scatter plot of per-sample branch contributions: image (x) vs.
+    vibration (y).
+ 
+    Args:
+        phi_image: (N,) image-branch Shapley contributions.
+        phi_vib: (N,) vibration-branch Shapley contributions.
+        labels: (N,) string array ("correct_defective"/"false_negative"),
+            used to color and group points via a legend.
+        title: Plot title.
+ 
+    Returns:
+        A matplotlib Figure.
+    """
+    fig, ax = plt.subplots(figsize=(6, 6))
+    for label in np.unique(labels):
+        mask = labels == label
+        ax.scatter(phi_image[mask], phi_vib[mask], label=label, alpha=0.6, s=20)
+ 
+    lim = max(np.abs(phi_image).max(), np.abs(phi_vib).max()) * 1.1
+    ax.plot([-lim, lim], [-lim, lim], linestyle="--", color="gray", linewidth=1, label="equal contribution")
+    ax.axhline(0, color="lightgray", linewidth=0.8)
+    ax.axvline(0, color="lightgray", linewidth=0.8)
+    ax.set_xlabel("Image branch contribution")
+    ax.set_ylabel("Vibration branch contribution")
+    ax.set_title(title)
+    ax.legend(fontsize=8)
+    fig.tight_layout()
+    return fig
+ 
+ 
+def plot_branch_contribution_violin(phi_image_per_class: dict, phi_vib_per_class: dict,
+                                     class_names: list[str], title: str = "") -> plt.Figure:
+    """Per-class violin plots comparing image vs. vibration branch
+    contribution distributions.
+ 
+    Args:
+        phi_image_per_class: class_name -> (N,) image contributions.
+        phi_vib_per_class: class_name -> (N,) vibration contributions.
+        class_names: Fault class names, in display order.
+        title: Overall figure title.
+ 
+    Returns:
+        A matplotlib Figure with one subplot per class.
+    """
+    fig, axes = plt.subplots(1, len(class_names), figsize=(5 * len(class_names), 5), sharey=True)
+    if len(class_names) == 1:
+        axes = [axes]
+ 
+    for ax, class_name in zip(axes, class_names):
+        data = [phi_image_per_class[class_name], phi_vib_per_class[class_name]]
+        ax.violinplot(data, showmeans=True)
+        ax.set_xticks([1, 2])
+        ax.set_xticklabels(["Image", "Vibration"])
+        ax.axhline(0, color="lightgray", linewidth=0.8)
+        ax.set_title(class_name)
+ 
+    axes[0].set_ylabel("Branch contribution")
+    fig.suptitle(title)
+    fig.tight_layout()
+    return fig
+ 

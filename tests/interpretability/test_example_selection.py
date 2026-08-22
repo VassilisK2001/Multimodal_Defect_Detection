@@ -3,6 +3,7 @@ import numpy as np
 from defect_detection.interpretability.example_selection import (
     find_defect_gate_examples,
     find_fault_type_examples,
+    find_vibration_fails_fusion_succeeds_examples,
 )
 
 CLASS_NAMES = ["outer_race", "inner_race", "ball"]
@@ -123,3 +124,70 @@ def test_fault_type_respects_n_limit():
     result = find_fault_type_examples(predictions, CLASS_NAMES, n=2)
 
     assert len(result["outer_race"]["correct"]) == 2
+
+
+def test_selects_only_vib_wrong_fusion_right_rows():
+    """Must select exactly rows where vibration's prediction disagrees with
+    ground truth and fusion's agrees."""
+    is_defect_true =      np.array([1, 1, 1, 1])
+    vib_defect_pred =     np.array([0, 1, 0, 1])  
+    fusion_defect_pred =  np.array([1, 1, 0, 0])  
+    # row 0: vib wrong, fusion right  -> match
+    # row 1: vib right, fusion right  -> no match (vib already correct)
+    # row 2: vib wrong, fusion wrong  -> no match (fusion didn't fix it)
+    # row 3: vib right, fusion wrong  -> no match
+ 
+    result = find_vibration_fails_fusion_succeeds_examples(
+        vib_defect_pred, fusion_defect_pred, is_defect_true,
+    )
+ 
+    assert result == [0]
+ 
+ 
+def test_respects_n_limit():
+    is_defect_true =      np.array([1, 1, 1, 1])
+    vib_defect_pred =     np.array([0, 0, 0, 0])
+    fusion_defect_pred =  np.array([1, 1, 1, 1])
+ 
+    result = find_vibration_fails_fusion_succeeds_examples(
+        vib_defect_pred, fusion_defect_pred, is_defect_true, n=2,
+    )
+ 
+    assert result == [0, 1]
+ 
+ 
+def test_returns_empty_list_when_no_matching_row_exists():
+    is_defect_true =      np.array([1, 1])
+    vib_defect_pred =     np.array([1, 1])  
+    fusion_defect_pred =  np.array([1, 1])
+ 
+    result = find_vibration_fails_fusion_succeeds_examples(
+        vib_defect_pred, fusion_defect_pred, is_defect_true,
+    )
+ 
+    assert result == []
+ 
+ 
+def test_returns_plain_python_ints_not_numpy_ints():
+    is_defect_true =      np.array([1, 1])
+    vib_defect_pred =     np.array([0, 0])
+    fusion_defect_pred =  np.array([1, 1])
+ 
+    result = find_vibration_fails_fusion_succeeds_examples(
+        vib_defect_pred, fusion_defect_pred, is_defect_true,
+    )
+ 
+    assert all(isinstance(idx, int) for idx in result)
+ 
+ 
+def test_preserves_ascending_row_order_for_scattered_matches():
+    is_defect_true =      np.array([1, 1, 1, 1, 1])
+    vib_defect_pred =     np.array([0, 1, 0, 1, 0])  
+    fusion_defect_pred =  np.array([1, 1, 1, 1, 1])
+ 
+    result = find_vibration_fails_fusion_succeeds_examples(
+        vib_defect_pred, fusion_defect_pred, is_defect_true, n=3,
+    )
+ 
+    assert result == [0, 2, 4]
+ 

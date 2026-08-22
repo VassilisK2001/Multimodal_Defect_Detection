@@ -68,3 +68,23 @@ def _build_entries(mask: np.ndarray, defective_positions: np.ndarray,
         {"row_index": int(defective_positions[i]), "predicted_class": int(fault_pred[i])}
         for i in local_indices
     ]
+
+def find_vibration_fails_fusion_succeeds_examples(vib_defect_pred: np.ndarray, fusion_defect_pred: np.ndarray,
+                                                    is_defect_true: np.ndarray, n: int = 3) -> list:
+    """Find up to n test rows where vibration-only's defect-gate prediction was
+    wrong but the fusion model's was correct.
+ 
+    Args:
+        vib_defect_pred: (N,) vibration-only's thresholded defect predictions.
+        fusion_defect_pred: (N,) fusion model's thresholded defect predictions.
+        is_defect_true: (N,) ground truth, same row order.
+        n: Maximum number of examples to return.
+ 
+    Returns:
+        A list of up to n row indices.
+    """
+    vib_wrong = vib_defect_pred != is_defect_true
+    fusion_right = fusion_defect_pred == is_defect_true
+    indices = np.where(vib_wrong & fusion_right)[0]
+    return [int(i) for i in indices[:n]]
+ 

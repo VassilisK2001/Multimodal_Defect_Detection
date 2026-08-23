@@ -1,0 +1,51 @@
+{
+  "final_threshold": 0.26645392179489136,
+  "oof_threshold_selection": {
+    "threshold": 0.358715683221817,
+    "precision": 0.8403908794788274,
+    "recall": 0.9520295202952029,
+    "target_recall_achieved": true
+  },
+  "validation_transfer_check": {
+    "recall": 0.8536585365853658,
+    "precision": 0.9210526315789473,
+    "diverges": true
+  },
+  "defect_metrics": {
+    "normal": {
+      "precision": 0.9935483870967742,
+      "recall": 0.9565217391304348,
+      "f1": 0.9746835443037974,
+      "support": 161
+    },
+    "defect": {
+      "precision": 0.851063829787234,
+      "recall": 0.975609756097561,
+      "f1": 0.9090909090909091,
+      "support": 41
+    }
+  },
+  "fault_metrics": {
+    "per_class": {
+      "outer_race": {
+        "precision": 0.7647058823529411,
+        "recall": 0.7647058823529411,
+        "f1": 0.7647058823529411,
+        "support": 17
+      },
+      "inner_race": {
+        "precision": 1.0,
+        "recall": 0.7857142857142857,
+        "f1": 0.88,
+        "support": 14
+      },
+      "ball": {
+        "precision": 0.6923076923076923,
+        "recall": 0.9,
+        "f1": 0.782608695652174,
+        "support": 10
+      }
+    },
+    "macro_f1": 0.8091048593350383
+  }
+}

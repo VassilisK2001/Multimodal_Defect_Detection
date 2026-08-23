@@ -152,3 +152,39 @@ def plot_fault_type_global_pr_curves(oof_results: dict, global_metrics: dict,
     fig.suptitle("Fault-Type PR Curves (Global OOF, one-vs-rest)")
     fig.tight_layout()
     return fig
+
+
+def plot_pr_curve_with_threshold(y_true: np.ndarray, y_proba: np.ndarray, threshold: float,
+                                  precision_at_threshold: float, recall_at_threshold: float,
+                                  title: str = "") -> plt.Figure:
+    """Plot a PR curve with the operating point corresponding to a specific
+    chosen decision threshold marked and labeled.
+ 
+    Args:
+        y_true: (N,) binary ground truth.
+        y_proba: (N,) predicted probabilities.
+        threshold: The selected decision threshold, shown in the point's label.
+        precision_at_threshold: Precision achieved at `threshold`.
+        recall_at_threshold: Recall achieved at `threshold`.
+        title: Plot title.
+ 
+    Returns:
+        A matplotlib Figure.
+    """
+    precision, recall, _ = precision_recall_curve(y_true, y_proba)
+    defect_rate = y_true.mean()
+ 
+    fig, ax = plt.subplots(figsize=(6, 5))
+    ax.plot(recall, precision, color="tab:blue", label="PR curve")
+    ax.axhline(defect_rate, linestyle="--", color="gray", label=f"baseline ({defect_rate:.3f})")
+    ax.scatter(
+        [recall_at_threshold], [precision_at_threshold], color="red", zorder=5, s=70,
+        label=f"threshold={threshold:.3f}\nprecision={precision_at_threshold:.3f}, "
+              f"recall={recall_at_threshold:.3f}",
+    )
+    ax.set_xlabel("Recall")
+    ax.set_ylabel("Precision")
+    ax.set_title(title)
+    ax.legend(fontsize=8)
+    fig.tight_layout()
+    return fig

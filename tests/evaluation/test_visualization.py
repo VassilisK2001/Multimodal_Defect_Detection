@@ -9,7 +9,7 @@ from defect_detection.evaluation.visualization import (
     plot_defect_gate_global_curves,
     plot_fault_type_confusion_matrix,
     plot_fault_type_global_pr_curves,
-    plot_pr_curve_with_threshold,
+    plot_bootstrap_distribution,
 )
  
 
@@ -256,45 +256,32 @@ def test_fault_type_curves_use_only_defective_masked_samples():
     assert np.max(model_line.get_ydata()) == pytest.approx(1.0)
 
 
-def test_pr_curve_marks_the_given_operating_point_exactly():
-    y_true = np.array([0, 0, 1, 1])
-    y_proba = np.array([0.2, 0.4, 0.6, 0.8])
+def test_bootstrap_distribution_returns_figure():
+    values = np.random.randn(100)
  
-    fig = plot_pr_curve_with_threshold(
-        y_true, y_proba, threshold=0.5, precision_at_threshold=0.75, recall_at_threshold=0.6,
-    )
- 
-    scatter = next(c for c in fig.axes[0].collections)
-    offset = scatter.get_offsets()[0]
-    assert offset[0] == pytest.approx(0.6)
-    assert offset[1] == pytest.approx(0.75)
- 
- 
-def test_pr_curve_baseline_matches_defect_rate():
-    is_defect_true = np.array([0, 0, 0, 1])
-    y_proba = np.array([0.2, 0.3, 0.1, 0.8])
- 
-    fig = plot_pr_curve_with_threshold(
-        is_defect_true, y_proba, threshold=0.5, precision_at_threshold=1.0, recall_at_threshold=1.0,
-    )
- 
-    baseline_lines = [line for line in fig.axes[0].get_lines() if line.get_linestyle() == "--"]
-    assert len(baseline_lines) == 1
-    assert np.allclose(baseline_lines[0].get_ydata(), 0.25)
- 
- 
-def test_pr_curve_returns_figure_with_curve_and_baseline_lines():
-    y_true = np.array([0, 0, 1, 1])
-    y_proba = np.array([0.2, 0.4, 0.6, 0.8])
- 
-    fig = plot_pr_curve_with_threshold(
-        y_true, y_proba, threshold=0.5, precision_at_threshold=0.75, recall_at_threshold=0.6,
-    )
+    fig = plot_bootstrap_distribution(values, mean_value=0.0, std_value=1.0, xlabel="X", title="T")
  
     assert isinstance(fig, plt.Figure)
-    solid_lines = [line for line in fig.axes[0].get_lines() if line.get_linestyle() == "-"]
-    dashed_lines = [line for line in fig.axes[0].get_lines() if line.get_linestyle() == "--"]
-    assert len(solid_lines) >= 1
-    assert len(dashed_lines) == 1
  
+ 
+def test_bootstrap_distribution_mean_line_matches_given_value():
+    values = np.random.randn(100)
+ 
+    fig = plot_bootstrap_distribution(values, mean_value=0.42, std_value=0.1)
+ 
+    mean_lines = [line for line in fig.axes[0].get_lines() if line.get_color() == "red"]
+    assert len(mean_lines) == 1
+    assert np.allclose(mean_lines[0].get_xdata(), 0.42)
+ 
+ 
+ 
+def test_bootstrap_distribution_axis_labels_and_title():
+    values = np.random.randn(50)
+ 
+    fig = plot_bootstrap_distribution(values, mean_value=0.0, std_value=1.0,
+                                       xlabel="Threshold", title="My Title")
+ 
+    ax = fig.axes[0]
+    assert ax.get_xlabel() == "Threshold"
+    assert ax.get_title() == "My Title"
  

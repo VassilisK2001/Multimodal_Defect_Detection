@@ -1,27 +1,26 @@
 {
-  "final_threshold": 0.26645392179489136,
-  "oof_threshold_selection": {
-    "threshold": 0.358715683221817,
-    "precision": 0.8403908794788274,
-    "recall": 0.9520295202952029,
-    "target_recall_achieved": true
-  },
-  "validation_transfer_check": {
-    "recall": 0.8536585365853658,
-    "precision": 0.9210526315789473,
-    "diverges": true
+  "final_threshold": 0.29511811546981337,
+  "bootstrap": {
+    "mean_threshold": 0.29511811546981337,
+    "std_threshold": 0.11288744586178709,
+    "mean_recall": 0.9636341463414634,
+    "std_recall": 0.01782189297256386,
+    "mean_precision": 0.8655814313889297,
+    "std_precision": 0.12335256080331398,
+    "n_target_achieved": 1000,
+    "n_bootstrap": 1000
   },
   "defect_metrics": {
     "normal": {
-      "precision": 0.9935483870967742,
-      "recall": 0.9565217391304348,
-      "f1": 0.9746835443037974,
+      "precision": 0.9873417721518988,
+      "recall": 0.968944099378882,
+      "f1": 0.9780564263322884,
       "support": 161
     },
     "defect": {
-      "precision": 0.851063829787234,
-      "recall": 0.975609756097561,
-      "f1": 0.9090909090909091,
+      "precision": 0.8863636363636364,
+      "recall": 0.9512195121951219,
+      "f1": 0.9176470588235294,
       "support": 41
     }
   },

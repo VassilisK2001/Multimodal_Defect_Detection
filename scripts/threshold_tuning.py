@@ -1,7 +1,6 @@
 import json
 import logging
 
-import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader
@@ -9,16 +8,12 @@ from torch.utils.data import DataLoader
 from defect_detection.data.dataset import MultimodalDefectDataset
 from defect_detection.evaluation.metrics import compute_defect_gate_metrics, compute_fault_type_metrics
 from defect_detection.evaluation.predictions import collect_test_predictions
-from defect_detection.evaluation.run_auc_evaluation import run_oof_cross_validation
 from defect_detection.evaluation.visualization import (
+    plot_bootstrap_distribution,
     plot_defect_gate_confusion_matrix,
     plot_fault_type_confusion_matrix,
-    plot_pr_curve_with_threshold,
 )
-from defect_detection.inference.thresholds import (
-    check_threshold_transfers_to_final_model,
-    select_recall_constrained_threshold,
-)
+from defect_detection.inference.thresholds import bootstrap_threshold_distribution
 from defect_detection.mlflow_utils import load_model_and_stats
 from defect_detection.utils import find_project_root, load_yaml_config
 
@@ -26,6 +21,7 @@ from defect_detection.utils import find_project_root, load_yaml_config
 logger = logging.getLogger(__name__)
 
 TARGET_RECALL = 0.95
+N_BOOTSTRAP = 1000
 
 
 if __name__ == "__main__":
@@ -34,7 +30,6 @@ if __name__ == "__main__":
 
     project_root = find_project_root()
     data_config = load_yaml_config("config/data_config.yaml")
-    manifest_df = pd.read_csv(project_root / data_config["paths"]["manifest_dir"] / "manifest.csv")
     val_df = pd.read_csv(project_root / data_config["paths"]["manifest_dir"] / "val.csv")
     test_df = pd.read_csv(project_root / data_config["paths"]["manifest_dir"] / "test.csv")
     class_names = [ft["name"] for ft in data_config["cwru"]["fault_types"]]
@@ -43,59 +38,51 @@ if __name__ == "__main__":
     output_dir.mkdir(parents=True, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
-    logger.info("Running OOF cross-validation for 'both' (defect-gate threshold estimation)...")
-    oof_results = run_oof_cross_validation(
-        manifest_df, class_names, window_size, fs, k=5, seed=42, device=device, modalities=("both",),
-    )
-    oof_defect_true = oof_results["is_defect_true"]
-    oof_defect_proba = oof_results["models"]["both"]["oof_defect_proba"]
-    np.savez(output_dir / "oof_defect_predictions.npz", y_true=oof_defect_true, y_proba=oof_defect_proba)
-
-
-    logger.info("Selecting recall-constrained threshold (target_recall=%.2f)...", TARGET_RECALL)
-    threshold_result = select_recall_constrained_threshold(oof_defect_true, oof_defect_proba, TARGET_RECALL)
-    logger.info("OOF-derived threshold: %.4f (precision=%.4f, recall=%.4f, target_recall_achieved=%s)",
-                threshold_result["threshold"], threshold_result["precision"],
-                threshold_result["recall"], threshold_result["target_recall_achieved"])
-
-    fig_pr = plot_pr_curve_with_threshold(
-        oof_defect_true, oof_defect_proba, threshold_result["threshold"],
-        threshold_result["precision"], threshold_result["recall"],
-        title="Defect Gate: OOF PR Curve with Selected Threshold",
-    )
-    fig_pr.savefig(output_dir / "pr_curve_with_threshold.png", dpi=150, bbox_inches="tight")
-
-
-    logger.info("Loading final deployed model and checking threshold transfer on val.csv...")
+    logger.info("Loading final deployed model...")
     model, vib_mean, vib_std = load_model_and_stats("both", device=device)
+
+    logger.info("Collecting validation-set predictions...")
     val_dataset = MultimodalDefectDataset(
         val_df, window_size=window_size, fs=fs, training=False, vib_mean=vib_mean, vib_std=vib_std)
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
     val_predictions = collect_test_predictions(model, val_loader, device=device)
 
-    transfer_check = check_threshold_transfers_to_final_model(
-        threshold_result["threshold"], val_predictions["is_defect_true"], val_predictions["defect_proba"],
-        TARGET_RECALL,
+    logger.info("Running stratified bootstrap threshold estimation (n_bootstrap=%d, target_recall=%.2f)...",
+                N_BOOTSTRAP, TARGET_RECALL)
+    bootstrap_result = bootstrap_threshold_distribution(
+        val_predictions["is_defect_true"], val_predictions["defect_proba"],
+        target_recall=TARGET_RECALL, n_bootstrap=N_BOOTSTRAP,
     )
-    logger.info("Validation-set transfer check: recall=%.4f, precision=%.4f, diverges=%s",
-                transfer_check["recall"], transfer_check["precision"], transfer_check["diverges"])
+    logger.info(
+        "Bootstrap threshold: mean=%.4f (std=%.4f) | recall: mean=%.4f (std=%.4f) | "
+        "precision: mean=%.4f (std=%.4f) | target achieved in %d/%d resamples",
+        bootstrap_result["mean_threshold"], bootstrap_result["std_threshold"],
+        bootstrap_result["mean_recall"], bootstrap_result["std_recall"],
+        bootstrap_result["mean_precision"], bootstrap_result["std_precision"],
+        bootstrap_result["n_target_achieved"], bootstrap_result["n_bootstrap"],
+    )
 
-    
-    final_threshold = threshold_result["threshold"]
-    if transfer_check["diverges"]:
-        logger.warning(
-            "OOF-derived threshold diverges on the final model's validation predictions "
-            "(recall=%.4f vs. target=%.2f) — falling back to a validation-set-only threshold.",
-            transfer_check["recall"], TARGET_RECALL,
-        )
-        fallback_result = select_recall_constrained_threshold(
-            val_predictions["is_defect_true"], val_predictions["defect_proba"], TARGET_RECALL,
-        )
-        final_threshold = fallback_result["threshold"]
-        logger.info("Fallback validation-set threshold: %.4f", final_threshold)
-    logger.info("Final threshold selected: %.4f", final_threshold)
+    final_threshold = bootstrap_result["mean_threshold"]
+    logger.info("Final threshold selected (bootstrap mean): %.4f", final_threshold)
 
+    logger.info("Plotting bootstrap distributions...")
+    fig_threshold_dist = plot_bootstrap_distribution(
+        bootstrap_result["thresholds"], bootstrap_result["mean_threshold"], bootstrap_result["std_threshold"],
+        xlabel="Threshold", title="Bootstrap Distribution: Selected Threshold",
+    )
+    fig_threshold_dist.savefig(output_dir / "bootstrap_threshold_distribution.png", dpi=150, bbox_inches="tight")
+
+    fig_recall_dist = plot_bootstrap_distribution(
+        bootstrap_result["recalls"], bootstrap_result["mean_recall"], bootstrap_result["std_recall"],
+        xlabel="Recall", title="Bootstrap Distribution: Achieved Recall",
+    )
+    fig_recall_dist.savefig(output_dir / "bootstrap_recall_distribution.png", dpi=150, bbox_inches="tight")
+
+    fig_precision_dist = plot_bootstrap_distribution(
+        bootstrap_result["precisions"], bootstrap_result["mean_precision"], bootstrap_result["std_precision"],
+        xlabel="Precision", title="Bootstrap Distribution: Achieved Precision",
+    )
+    fig_precision_dist.savefig(output_dir / "bootstrap_precision_distribution.png", dpi=150, bbox_inches="tight")
 
     logger.info("Generating final report on test.csv...")
     test_dataset = MultimodalDefectDataset(
@@ -121,12 +108,19 @@ if __name__ == "__main__":
         test_predictions["fault_class_true"], test_predictions["fault_class_pred"], class_names)
     fig_fault_cm.savefig(output_dir / "confusion_matrix_fault_type.png", dpi=150, bbox_inches="tight")
 
-
     with open(output_dir / "final_report.json", "w", encoding="utf-8") as f:
         json.dump({
             "final_threshold": final_threshold,
-            "oof_threshold_selection": threshold_result,
-            "validation_transfer_check": transfer_check,
+            "bootstrap": {
+                "mean_threshold": bootstrap_result["mean_threshold"],
+                "std_threshold": bootstrap_result["std_threshold"],
+                "mean_recall": bootstrap_result["mean_recall"],
+                "std_recall": bootstrap_result["std_recall"],
+                "mean_precision": bootstrap_result["mean_precision"],
+                "std_precision": bootstrap_result["std_precision"],
+                "n_target_achieved": bootstrap_result["n_target_achieved"],
+                "n_bootstrap": bootstrap_result["n_bootstrap"],
+            },
             "defect_metrics": defect_metrics,
             "fault_metrics": fault_metrics,
         }, f, indent=2, default=str)

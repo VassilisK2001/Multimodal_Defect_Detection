@@ -154,36 +154,29 @@ def plot_fault_type_global_pr_curves(oof_results: dict, global_metrics: dict,
     return fig
 
 
-def plot_pr_curve_with_threshold(y_true: np.ndarray, y_proba: np.ndarray, threshold: float,
-                                  precision_at_threshold: float, recall_at_threshold: float,
-                                  title: str = "") -> plt.Figure:
-    """Plot a PR curve with the operating point corresponding to a specific
-    chosen decision threshold marked and labeled.
+def plot_bootstrap_distribution(values: np.ndarray, mean_value: float, std_value: float,
+                                 xlabel: str = "", title: str = "") -> plt.Figure:
+    """Plot a histogram of a bootstrap-resampled statistic's distribution, with
+    the mean marked and a shaded +/- 1 std band.
  
     Args:
-        y_true: (N,) binary ground truth.
-        y_proba: (N,) predicted probabilities.
-        threshold: The selected decision threshold, shown in the point's label.
-        precision_at_threshold: Precision achieved at `threshold`.
-        recall_at_threshold: Recall achieved at `threshold`.
+        values: (B,) array of the statistic computed on each bootstrap resample.
+        mean_value: Mean across resamples.
+        std_value: Standard deviation across resamples.
+        xlabel: X-axis label.
         title: Plot title.
  
     Returns:
         A matplotlib Figure.
     """
-    precision, recall, _ = precision_recall_curve(y_true, y_proba)
-    defect_rate = y_true.mean()
- 
     fig, ax = plt.subplots(figsize=(6, 5))
-    ax.plot(recall, precision, color="tab:blue", label="PR curve")
-    ax.axhline(defect_rate, linestyle="--", color="gray", label=f"baseline ({defect_rate:.3f})")
-    ax.scatter(
-        [recall_at_threshold], [precision_at_threshold], color="red", zorder=5, s=70,
-        label=f"threshold={threshold:.3f}\nprecision={precision_at_threshold:.3f}, "
-              f"recall={recall_at_threshold:.3f}",
-    )
-    ax.set_xlabel("Recall")
-    ax.set_ylabel("Precision")
+    ax.hist(values, bins=30, color="tab:blue", alpha=0.7, edgecolor="white")
+    ax.axvline(mean_value, color="red", linestyle="-", linewidth=2,
+               label=f"mean = {mean_value:.3f}")
+    ax.axvspan(mean_value - std_value, mean_value + std_value, color="red", alpha=0.15,
+               label=f"\u00b1 1 std = {std_value:.3f}")
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel("Count")
     ax.set_title(title)
     ax.legend(fontsize=8)
     fig.tight_layout()

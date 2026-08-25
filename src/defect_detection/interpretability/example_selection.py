@@ -27,6 +27,22 @@ def find_defect_gate_examples(predictions: dict, n: int = 3) -> dict:
     }
 
 
+def find_correct_normal_examples(predictions: dict) -> list[int]:
+    """Find all row indices where the defect gate correctly predicted normal.
+ 
+    Args:
+        predictions: Output of collect_test_predictions(), for the full test
+            set, in the same row order as the test dataset.
+ 
+    Returns:
+        A list of all matching row indices.
+    """
+    y_true = predictions["is_defect_true"]
+    y_pred = predictions["is_defect_pred"]
+    indices = np.where((y_true == 0) & (y_pred == 0))[0]
+    return [int(i) for i in indices]
+
+
 def find_fault_type_examples(predictions: dict, class_names: list[str], n: int = 3) -> dict:
     """Find up to n correct and n misclassified examples per fault class.
 

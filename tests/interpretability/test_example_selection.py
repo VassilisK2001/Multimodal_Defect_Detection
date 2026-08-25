@@ -4,6 +4,7 @@ from defect_detection.interpretability.example_selection import (
     find_defect_gate_examples,
     find_fault_type_examples,
     find_vibration_fails_fusion_succeeds_examples,
+    find_correct_normal_examples,
 )
 
 CLASS_NAMES = ["outer_race", "inner_race", "ball"]
@@ -190,4 +191,40 @@ def test_preserves_ascending_row_order_for_scattered_matches():
     )
  
     assert result == [0, 2, 4]
+
+
+def test_find_correct_normal_examples_returns_correct_indices():
+    predictions = {
+        "is_defect_true": np.array([0, 0, 1, 1, 0]),
+        "is_defect_pred": np.array([0, 1, 1, 0, 0]),
+    }
+ 
+    result = find_correct_normal_examples(predictions)
+ 
+    assert result == [0, 4]
+ 
+ 
+def test_find_correct_normal_examples_returns_full_pool_not_capped():
+    """every matching row must be returned, not sliced 
+    to a small fixed count."""
+    n_correct_normal = 10
+    predictions = {
+        "is_defect_true": np.zeros(n_correct_normal, dtype=int),
+        "is_defect_pred": np.zeros(n_correct_normal, dtype=int),
+    }
+ 
+    result = find_correct_normal_examples(predictions)
+ 
+    assert len(result) == n_correct_normal
+ 
+ 
+def test_find_correct_normal_examples_empty_when_none_match():
+    predictions = {
+        "is_defect_true": np.array([1, 1, 0]),
+        "is_defect_pred": np.array([1, 0, 1]),
+    }
+ 
+    result = find_correct_normal_examples(predictions)
+ 
+    assert result == []
  

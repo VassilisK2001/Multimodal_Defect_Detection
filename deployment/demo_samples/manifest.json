@@ -1,0 +1,74 @@
+[
+  {
+    "scenario": "normal",
+    "sample": "sample_1",
+    "true_is_defect": false,
+    "true_fault_class": null
+  },
+  {
+    "scenario": "normal",
+    "sample": "sample_2",
+    "true_is_defect": false,
+    "true_fault_class": null
+  },
+  {
+    "scenario": "normal",
+    "sample": "sample_3",
+    "true_is_defect": false,
+    "true_fault_class": null
+  },
+  {
+    "scenario": "outer_race",
+    "sample": "sample_1",
+    "true_is_defect": true,
+    "true_fault_class": "outer_race"
+  },
+  {
+    "scenario": "outer_race",
+    "sample": "sample_2",
+    "true_is_defect": true,
+    "true_fault_class": "outer_race"
+  },
+  {
+    "scenario": "outer_race",
+    "sample": "sample_3",
+    "true_is_defect": true,
+    "true_fault_class": "outer_race"
+  },
+  {
+    "scenario": "inner_race",
+    "sample": "sample_1",
+    "true_is_defect": true,
+    "true_fault_class": "inner_race"
+  },
+  {
+    "scenario": "inner_race",
+    "sample": "sample_2",
+    "true_is_defect": true,
+    "true_fault_class": "inner_race"
+  },
+  {
+    "scenario": "inner_race",
+    "sample": "sample_3",
+    "true_is_defect": true,
+    "true_fault_class": "inner_race"
+  },
+  {
+    "scenario": "ball",
+    "sample": "sample_1",
+    "true_is_defect": true,
+    "true_fault_class": "ball"
+  },
+  {
+    "scenario": "ball",
+    "sample": "sample_2",
+    "true_is_defect": true,
+    "true_fault_class": "ball"
+  },
+  {
+    "scenario": "ball",
+    "sample": "sample_3",
+    "true_is_defect": true,
+    "true_fault_class": "ball"
+  }
+]

@@ -1,0 +1,5 @@
+{
+  "defect_threshold": 0.29511811546981337,
+  "sampling_rate_hz": 12000,
+  "fault_class_names": ["outer_race", "inner_race", "ball"]
+}

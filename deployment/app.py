@@ -11,10 +11,9 @@ MANIFEST_PATH = DEMO_SAMPLES_DIR / "manifest.json"
 API_URL = "http://127.0.0.1:8000/inspect"
 
 st.set_page_config(page_title="Multimodal Defect Detection", layout="centered")
-st.title("Multimodal Defect Detection — Live Demo")
+st.title("Multimodal Defect Detection Live Demo")
 st.caption(
-    "Fusion model (image + vibration), deployed as ONNX Runtime + FastAPI on Hugging Face Spaces. "
-    "Select a real, held-out test-set sample below — no file upload needed."
+    "Select a scenario and a sample to run inference on. The sample consists of an image and a vibration window. The model will predict whether the sample is defective or normal, and if defective, it will also predict the bearing fault type that caused the defect."
 )
 
 scenarios = load_manifest(MANIFEST_PATH)

@@ -13,6 +13,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+RUN sed -i 's/\r$//' run.sh
+
 RUN chmod +x run.sh && chown -R appuser:appuser /app
 
 USER appuser

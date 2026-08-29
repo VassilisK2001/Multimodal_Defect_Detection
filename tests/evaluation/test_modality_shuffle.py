@@ -13,6 +13,7 @@ from defect_detection.evaluation.modality_shuffle import (
     run_modality_shuffle_test,
 )
 from defect_detection.evaluation.predictions import collect_test_predictions
+from defect_detection.models.fusion_model import MultimodalDefectClassifier
 from tests.factories import make_synthetic_loader
 
 
@@ -73,8 +74,7 @@ def test_corrupt_batch_raises_on_unknown_modality():
 
 def test_collect_predictions_with_corruption_matches_baseline_shape():
     """Should return the same dict shape as collect_test_predictions."""
-    from defect_detection.models.fusion_model import MultimodalDefectClassifier
-
+    
     model = MultimodalDefectClassifier(modality="both")
     loader = make_synthetic_loader(n_samples=8, n_defective=3)
     device = torch.device("cpu")

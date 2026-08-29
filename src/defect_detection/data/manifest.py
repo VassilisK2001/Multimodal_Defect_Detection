@@ -1,4 +1,4 @@
-
+import logging
 import random
 import re
 from pathlib import Path
@@ -9,6 +9,8 @@ from PIL import Image
 from scipy.io import loadmat
 
 from defect_detection.utils import find_project_root, load_yaml_config
+
+logger = logging.getLogger(__name__)
 
 
 def build_fault_code_maps(config: dict) -> tuple[dict, dict]:
@@ -52,7 +54,7 @@ def build_cwru_inventory(cwru_dir: Path, config: dict, project_root: Path) -> pd
 
         match = re.match(r"(B|IR|OR)(\d{3})(\d)?_(\d)", name)
         if not match:
-            print(f"Warning: skipping unrecognized CWRU filename: {name}")
+            logger.warning("Skipping unrecognized CWRU filename: %s", name)
             continue
 
         fault_code, diameter_code, _position, _idx = match.groups()
@@ -96,7 +98,7 @@ def build_mvtec_records(mvtec_dir: Path, config: dict, project_root: Path) -> li
             img_dir = test_dir / defect_type
             mask_dir = gt_dir / defect_type
             if not img_dir.exists():
-                print(f"Warning: expected defect dir missing: {img_dir}")
+                logger.warning("Expected defect dir missing: %s", img_dir)
                 continue
 
             for img_path in sorted(img_dir.glob("*.png")):
@@ -148,19 +150,20 @@ def build_manifest(config_path: str = "config/data_config.yaml", seed: int = 42)
 
     rng = random.Random(seed)
 
-    print("Indexing CWRU files...")
+    logger.info("Indexing CWRU files...")
     cwru_inventory = build_cwru_inventory(cwru_dir, config, project_root)
-    print(f"  {len(cwru_inventory)} CWRU files indexed "
-          f"({(cwru_inventory.condition == 'normal').sum()} normal, "
-          f"{(cwru_inventory.condition == 'fault').sum()} fault)")
+    logger.info("  %d CWRU files indexed (%d normal, %d fault)",
+                len(cwru_inventory),
+                (cwru_inventory.condition == "normal").sum(),
+                (cwru_inventory.condition == "fault").sum())
 
-    print("Indexing MVTec images...")
+    logger.info("Indexing MVTec images...")
     mvtec_records = build_mvtec_records(mvtec_dir, config, project_root)
-    print(f"  {len(mvtec_records)} MVTec images indexed")
+    logger.info("  %d MVTec images indexed", len(mvtec_records))
 
     manifest_df = pd.DataFrame(mvtec_records)
 
-    print("Assigning vibration samples...")
+    logger.info("Assigning vibration samples...")
     vib_assignments = manifest_df.apply(
         lambda row: assign_vibration_sample(row, cwru_inventory, config, rng), axis=1
     )
@@ -174,18 +177,3 @@ def build_manifest(config_path: str = "config/data_config.yaml", seed: int = 42)
     manifest_df["sample_id"] = [f"{i:05d}" for i in range(len(manifest_df))]
 
     return manifest_df
-
-
-if __name__ == "__main__":
-    config = load_yaml_config("config/data_config.yaml")
-    df = build_manifest()
-
-    project_root = find_project_root()
-    out_dir = project_root / config["paths"]["manifest_dir"]
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / "manifest.csv"
-    df.to_csv(out_path, index=False)
-
-    print(f"\nManifest written to {out_path} ({len(df)} rows)")
-    print(df["is_defect"].value_counts())
-    print(df["fault_class"].value_counts())

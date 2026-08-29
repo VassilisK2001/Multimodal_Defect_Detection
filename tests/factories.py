@@ -2,6 +2,7 @@
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
+CLASS_NAMES = ["outer_race", "inner_race", "ball"]
 
 def make_synthetic_loader(n_samples: int, n_defective: int, batch_size: int = 8) -> DataLoader:
     """Build a synthetic DataLoader yielding (image, vib_features, is_defect,

@@ -1,6 +1,4 @@
-
-import argparse
-from typing import cast
+import logging
 import tempfile
 from pathlib import Path
 
@@ -29,6 +27,7 @@ from defect_detection.training.visualization import (
 from defect_detection.models.batch_utils import forward_batch
 from defect_detection.utils import find_project_root, flatten_dict, load_yaml_config
 
+logger = logging.getLogger(__name__)
 
 
 def build_datasets(train_df: pd.DataFrame, val_df: pd.DataFrame,
@@ -307,11 +306,11 @@ def train_from_dataframes(train_df: pd.DataFrame, val_df: pd.DataFrame, modality
                     val_metrics["fault_type_loss"] if not np.isnan(val_metrics["fault_type_loss"]) else 0.0
                 )
 
-                print(f"Epoch {epoch+1}/{max_epochs} | "
-                      f"train_defect_loss={train_metrics['defect_loss']:.4f} "
-                      f"train_fault_type_loss={train_metrics['fault_type_loss']:.4f} | "
-                      f"val_defect_loss={val_metrics['defect_loss']:.4f} "
-                      f"val_fault_type_loss={val_metrics['fault_type_loss']:.4f}")
+                logger.info("Epoch %d/%d | train_defect_loss=%.4f train_fault_type_loss=%.4f | "
+                            "val_defect_loss=%.4f val_fault_type_loss=%.4f",
+                            epoch + 1, max_epochs, train_metrics["defect_loss"],
+                            train_metrics["fault_type_loss"], val_metrics["defect_loss"],
+                            val_metrics["fault_type_loss"])
 
                 if val_total_loss < best_val_loss - min_delta:
                     best_val_loss = val_total_loss
@@ -320,7 +319,7 @@ def train_from_dataframes(train_df: pd.DataFrame, val_df: pd.DataFrame, modality
                 else:
                     patience_counter += 1
                     if patience_counter >= patience:
-                        print(f"Early stopping at epoch {epoch+1}")
+                        logger.info("Early stopping at epoch %d", epoch + 1)
                         break
 
             mlflow.log_artifact(str(best_checkpoint_path))
@@ -385,10 +384,3 @@ def train(modality: Modality = "both", experiment_name: str = "defect_detection"
          register_model=register_model,
     )
     return model
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--modality", choices=["both", "image", "vibration"], default="both")
-    args = parser.parse_args()
-
-    train(modality=cast(Modality, args.modality))

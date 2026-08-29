@@ -1,3 +1,4 @@
+import logging
 
 import pandas as pd
 import torch
@@ -6,7 +7,13 @@ from defect_detection.evaluation.reporting import save_evaluation_results
 from defect_detection.evaluation.run_evaluation import evaluate_model
 from defect_detection.utils import find_project_root, load_yaml_config
 
+logger = logging.getLogger(__name__)
+
+
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+                         force=True)
+
     project_root = find_project_root()
     data_config = load_yaml_config("config/data_config.yaml")
 
@@ -18,7 +25,7 @@ if __name__ == "__main__":
     summary_rows = []
 
     for modality in ("both", "image", "vibration"):
-        print(f"Evaluating '{modality}'...")
+        logger.info("Evaluating '%s'...", modality)
 
         result = evaluate_model(
             modality, test_df,
@@ -39,8 +46,7 @@ if __name__ == "__main__":
         })
 
     summary_df = pd.DataFrame(summary_rows)
-    print("\n=== Summary (test set) ===")
-    print(summary_df.to_string(index=False))
+    logger.info("=== Summary (test set) ===\n%s", summary_df.to_string(index=False))
 
     summary_df.to_csv(output_dir / "summary.csv", index=False)
-    print(f"\nFull results saved to {output_dir}")
+    logger.info("Full results saved to %s", output_dir)

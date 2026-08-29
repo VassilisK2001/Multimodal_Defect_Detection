@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 import torch
 
+from tests.factories import CLASS_NAMES
 from defect_detection.evaluation.run_auc_evaluation import (
     _compute_fold_fault_auc,
     _safe_pr_auc,
@@ -15,7 +16,6 @@ from defect_detection.evaluation.run_auc_evaluation import (
     run_oof_cross_validation,
 )
 
-CLASS_NAMES = ["outer_race", "inner_race", "ball"]
 
 def test_initialize_oof_arrays_correct_shapes_and_zeroed():
     arrays = initialize_oof_arrays(n_samples=10, num_fault_classes=3, modalities=("image", "both"))
@@ -51,8 +51,8 @@ def test_safe_auc_returns_real_value_for_well_formed_input():
 
 
 def test_compute_fold_fault_auc_nan_for_absent_class():
-    """A completely absent class returns NaN; classes that do occur (and have
-    negatives available from each other) get a real value."""
+    """A completely absent class returns NaN, while classes that do occur 
+      get a real value."""
     y_true = np.array([0, 0, 1, 1])  
     y_score = np.array([[0.8, 0.1, 0.1], [0.7, 0.2, 0.1], [0.1, 0.8, 0.1], [0.2, 0.7, 0.1]])
 
@@ -130,7 +130,7 @@ def test_oof_arrays_populated_at_correct_global_positions():
 
 
 def test_ground_truth_arrays_correctly_populated():
-    """is_defect_true should reflect real labels; fault_class_true should be -1
+    """is_defect_true should reflect real labels, while fault_class_true should be -1
     for normal rows and the correct class index for defective rows."""
     fold_0 = _fake_fold_df(test_positions=[4, 5, 6, 7], all_positions=list(range(8)))
     predictions = {

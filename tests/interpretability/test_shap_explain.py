@@ -13,7 +13,6 @@ from defect_detection.interpretability.shap_explain import (
     check_additivity_per_instance,
     compute_shap_batched,
     compute_shap_per_instance,
-    load_images_for_df,
     make_fusion_predict_fn,
     make_vib_predict_fn,
     select_head1_background_rows,
@@ -203,17 +202,6 @@ def test_select_top_features_respects_k():
     assert len(result) == 3
 
 
-def test_load_images_for_df_returns_correct_count_and_shape(tmp_path):
-    for i in range(3):
-        Image.new("RGB", (64, 64), color=(i * 10, 0, 0)).save(tmp_path / f"img_{i}.png")
-
-    df = pd.DataFrame({"image_path": [f"img_{i}.png" for i in range(3)]})
-
-    result = load_images_for_df(df, tmp_path)
-
-    assert result.shape[0] == 3
-    assert result.shape[1] == 3  # channels
-
 def test_additivity_residual_correct_for_multiclass():
     fake_shap_values = SimpleNamespace(
         values=np.array([[[0.1, 0.2], [0.1, -0.1], [0.0, 0.05]]]),  # (1, 3, 2)
@@ -227,7 +215,7 @@ def test_additivity_residual_correct_for_multiclass():
         cast(shap.Explanation, fake_shap_values), fake_predict_fn, np.zeros((1, 3)), tol=1e-3,
     )
 
-    # sum over features (axis=1) per class: [0.2, 0.15]; + base [0.3,0.3] = [0.5, 0.45]
+    # sum over features (axis=1) per class
     assert result["max_residual"] == pytest.approx(0.0, abs=1e-6)
 
 

@@ -3,10 +3,8 @@ import pandas as pd
 from PIL import Image
 from scipy.io import savemat
 
+from tests.factories import CLASS_NAMES
 from defect_detection.export.demo_samples import build_manifest_entry, select_demo_rows, write_demo_sample
-
-
-CLASS_NAMES = ["outer_race", "inner_race", "ball"]
 
 
 def _make_test_df():

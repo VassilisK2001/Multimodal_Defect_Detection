@@ -14,8 +14,8 @@ from defect_detection.evaluation.predictions import collect_test_predictions
 from defect_detection.models.fusion_model import Modality
 from defect_detection.training.train import train_from_dataframes
 
-
 logger = logging.getLogger(__name__)
+
 
 MODALITIES: tuple[Modality, ...] = ("image", "vibration", "both")
 
@@ -53,7 +53,8 @@ def _safe_roc_auc(y_true: np.ndarray, y_score: np.ndarray) -> float:
 
 
 def _safe_pr_auc(y_true: np.ndarray, y_score: np.ndarray) -> float:
-    """average_precision_score, returning NaN when y_true has no positive examples."""
+    """average_precision_score, returning NaN instead of a misleading 0.0/-0.0
+    when y_true has no positive examples."""
     if y_true.sum() == 0:
         logger.warning("PR AUC undefined (no positive examples in y_true, n=%d) — returning NaN",
                         len(y_true))
@@ -90,7 +91,7 @@ def _compute_fold_fault_auc(y_true: np.ndarray, y_score: np.ndarray,
 
 
 def run_oof_cross_validation(manifest_df: pd.DataFrame, class_names: list[str],
-                              window_size: int, fs: int, k: int = 3, seed: int = 42,
+                              window_size: int, fs: int, k: int = 5, seed: int = 42,
                               device: torch.device = torch.device("cpu"),
                               modalities: tuple[Modality, ...] = MODALITIES) -> dict:
     """Run stratified k-fold cross-validation for all modalities on one shared
@@ -98,7 +99,8 @@ def run_oof_cross_validation(manifest_df: pd.DataFrame, class_names: list[str],
 
     Args:
         manifest_df: The full manifest (all rows, unsplit). Must have a standard
-            0..N-1 RangeIndex, since row positions are used to place predictions into the OOF arrays.
+            0..N-1 RangeIndex (e.g. freshly loaded via pd.read_csv), since row
+            positions are used to place predictions into the OOF arrays.
         class_names: Fault class names, in index order.
         window_size: Vibration window size in samples.
         fs: Vibration sampling rate in Hz.
@@ -113,7 +115,9 @@ def run_oof_cross_validation(manifest_df: pd.DataFrame, class_names: list[str],
             "fault_class_true": (N,) int array, ground truth fault class index for
                 defective rows; -1 for normal rows (not a valid class index).
             "models": modality -> {"oof_defect_proba", "oof_fault_proba",
-                "fold_metrics"}.
+                "fold_metrics"} — the last a list of k dicts, each
+                {"defect": {"roc_auc", "pr_auc"},
+                 "fault": {class_name: {"roc_auc", "pr_auc"}, ...}}.
     """
     n_samples = len(manifest_df)
     oof = initialize_oof_arrays(n_samples, len(class_names), modalities)
@@ -132,6 +136,8 @@ def run_oof_cross_validation(manifest_df: pd.DataFrame, class_names: list[str],
         val_df = cast(pd.DataFrame, fold_df[fold_df.split == "val"])
         test_df = cast(pd.DataFrame, fold_df[fold_df.split == "test"])
 
+        # Capture global row positions before resetting the index, so predictions
+        # can be written back to the correctly-aligned position in the OOF arrays.
         global_positions = test_df.index.to_numpy()
         test_df_reset = test_df.reset_index(drop=True)
 
@@ -183,25 +189,25 @@ def run_oof_cross_validation(manifest_df: pd.DataFrame, class_names: list[str],
     }
 
 
-def print_fold_level_summary(oof_results: dict, class_names: list[str]) -> None:
-    """Print mean ± std across folds for Head 1 and Head 2 (per class), per model."""
+def log_fold_level_summary(oof_results: dict, class_names: list[str]) -> None:
+    """Log mean ± std across folds for Head 1 and Head 2 (per class), per model."""
     for modality, model_data in oof_results["models"].items():
         n_folds = len(model_data["fold_metrics"])
-        print(f"\n=== {modality} — fold-level (mean \u00b1 std across {n_folds} folds) ===")
+        logger.info("=== %s — fold-level (mean \u00b1 std across %d folds) ===", modality, n_folds)
 
         defect_roc = [f["defect"]["roc_auc"] for f in model_data["fold_metrics"]]
         defect_pr = [f["defect"]["pr_auc"] for f in model_data["fold_metrics"]]
-        print(f"Head 1 (defect gate):  "
-              f"ROC AUC = {np.nanmean(defect_roc):.3f} \u00b1 {np.nanstd(defect_roc):.3f}   "
-              f"PR AUC = {np.nanmean(defect_pr):.3f} \u00b1 {np.nanstd(defect_pr):.3f}")
+        logger.info("Head 1 (defect gate):  ROC AUC = %.3f \u00b1 %.3f   PR AUC = %.3f \u00b1 %.3f",
+                    np.nanmean(defect_roc), np.nanstd(defect_roc),
+                    np.nanmean(defect_pr), np.nanstd(defect_pr))
 
-        print("Head 2 (fault type):")
+        logger.info("Head 2 (fault type):")
         for class_name in class_names:
             roc_vals = [f["fault"][class_name]["roc_auc"] for f in model_data["fold_metrics"]]
             pr_vals = [f["fault"][class_name]["pr_auc"] for f in model_data["fold_metrics"]]
-            print(f"  {class_name:12} "
-                  f"ROC AUC = {np.nanmean(roc_vals):.3f} \u00b1 {np.nanstd(roc_vals):.3f}   "
-                  f"PR AUC = {np.nanmean(pr_vals):.3f} \u00b1 {np.nanstd(pr_vals):.3f}")
+            logger.info("  %-12s ROC AUC = %.3f \u00b1 %.3f   PR AUC = %.3f \u00b1 %.3f",
+                        class_name, np.nanmean(roc_vals), np.nanstd(roc_vals),
+                        np.nanmean(pr_vals), np.nanstd(pr_vals))
 
 
 def compute_global_oof_metrics(oof_results: dict, class_names: list[str]) -> dict:
@@ -245,14 +251,13 @@ def compute_global_oof_metrics(oof_results: dict, class_names: list[str]) -> dic
     return global_metrics
 
 
-def print_global_oof_metrics(global_metrics: dict, class_names: list[str]) -> None:
-    """Print the global OOF ROC AUC / PR AUC per model, Head 1 and Head 2."""
+def log_global_oof_metrics(global_metrics: dict, class_names: list[str]) -> None:
+    """Log the global OOF ROC AUC / PR AUC per model, Head 1 and Head 2."""
     for modality, metrics in global_metrics.items():
-        print(f"\n=== {modality} — global OOF ===")
-        print(f"Head 1 (defect gate):  "
-              f"ROC AUC = {metrics['defect']['roc_auc']:.3f}   "
-              f"PR AUC = {metrics['defect']['pr_auc']:.3f}")
-        print("Head 2 (fault type):")
+        logger.info("=== %s — global OOF ===", modality)
+        logger.info("Head 1 (defect gate):  ROC AUC = %.3f   PR AUC = %.3f",
+                    metrics["defect"]["roc_auc"], metrics["defect"]["pr_auc"])
+        logger.info("Head 2 (fault type):")
         for class_name in class_names:
             m = metrics["fault"][class_name]
-            print(f"  {class_name:12} ROC AUC = {m['roc_auc']:.3f}   PR AUC = {m['pr_auc']:.3f}")
+            logger.info("  %-12s ROC AUC = %.3f   PR AUC = %.3f", class_name, m["roc_auc"], m["pr_auc"])

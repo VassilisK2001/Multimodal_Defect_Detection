@@ -3,14 +3,12 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from tests.factories import CLASS_NAMES
 from defect_detection.evaluation.category_baseline import (
     compare_predictions_by_category,
     predict_category_only_baseline,
     train_category_only_baseline,
 )
-
-
-CLASS_NAMES = ["outer_race", "inner_race", "ball"]
 
 
 def _manifest_row(category: str, is_defect: int, fault_class: str | None) -> dict:

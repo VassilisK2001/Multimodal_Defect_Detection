@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 from defect_detection.data.dataset import MultimodalDefectDataset
 from defect_detection.data.features import extract_raw_vib_features_from_df
 from defect_detection.data.normalization import apply_vibration_normalization
+from defect_detection.data.image_io import load_images_for_df
 from defect_detection.evaluation.predictions import collect_test_predictions
 from defect_detection.interpretability.branch_contribution import (
     check_shapley_additivity_sample,
@@ -16,7 +17,6 @@ from defect_detection.interpretability.branch_contribution import (
     prepare_background_samples,
 )
 from defect_detection.interpretability.shap_explain import (
-    load_images_for_df,
     select_head1_background_rows,
     select_head2_background_rows,
 )

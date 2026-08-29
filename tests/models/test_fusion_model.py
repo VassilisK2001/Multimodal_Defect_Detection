@@ -6,8 +6,6 @@ from defect_detection.models.fusion_model import MultimodalDefectClassifier
 from defect_detection.utils import load_yaml_config
 
 
-# Output shapes per modality
-
 def test_both_modality_output_shapes():
     """modality='both' should return (batch, 1) and (batch, num_fault_classes)."""
     model = MultimodalDefectClassifier(modality="both")
@@ -43,8 +41,6 @@ def test_vibration_only_modality_output_shapes():
     assert fault_logits.shape == (4, 3)
 
 
-# Missing input / invalid modality handling
-
 def test_image_modality_requires_image_input():
     """Should raise if image is missing for modality='image'."""
     model = MultimodalDefectClassifier(modality="image")
@@ -74,8 +70,6 @@ def test_invalid_modality_raises_at_construction():
         MultimodalDefectClassifier(modality="images")
 
 
-# Fusion input dimension correctness
-
 def test_fusion_input_dim_for_both():
     """Fusion layer input size should equal img_dim + vib_dim for modality='both'."""
     model = MultimodalDefectClassifier(modality="both", img_embedding_dim=128, vib_embedding_dim=64)
@@ -97,8 +91,6 @@ def test_fusion_input_dim_for_vibration_only():
     assert first_layer.in_features == 64
 
 
-# Architecture consistency across modalities
-
 def test_fusion_and_head_architecture_identical_across_modalities():
     """Fusion hidden size and head output sizes should be identical regardless of
     modality."""
@@ -111,8 +103,6 @@ def test_fusion_and_head_architecture_identical_across_modalities():
         assert model.defect_head.out_features == 1
         assert model.fault_type_head.out_features == 3
 
-
-# Config-driven defaults
 
 def test_defaults_loaded_from_model_config():
     """Omitted arguments should fall back to config/model_config.yaml."""
@@ -165,11 +155,10 @@ def test_unfreeze_from_default_matches_model_config():
  
 def test_unfreeze_from_override_does_not_affect_vibration_only_modality():
     """unfreeze_from has no effect when modality='vibration', since there is no
-    image encoder to apply it to — should not raise."""
+    image encoder to apply it to."""
     model = MultimodalDefectClassifier(modality="vibration", unfreeze_from="fc")
     assert model.image_encoder is None
 
-# Gradient flow
 
 @pytest.mark.parametrize("modality", ["both", "image", "vibration"])
 def test_gradients_flow_through_full_model(modality):
@@ -193,8 +182,6 @@ def test_gradients_flow_through_full_model(modality):
     for name, param in model.fault_type_head.named_parameters():
         assert param.grad is not None, f"fault_type_head.{name} has no gradient"
 
-
-# Output sanity
 
 def test_different_inputs_produce_different_outputs():
     """Distinct random inputs should not produce identical logits."""

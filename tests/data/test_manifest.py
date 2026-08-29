@@ -46,8 +46,6 @@ def test_fault_class_idx_only_valid_values(manifest_df):
     assert set(manifest_df["fault_class_idx"].unique()) <= {-1, 0, 1, 2}
 
 
-# is_defect / fault_class / fault_class_idx consistency
-
 def test_normal_rows_have_none_fault_class(manifest_df):
     normal_rows = manifest_df[manifest_df.is_defect == 0]
     assert (normal_rows["fault_class"] == "none").all()
@@ -66,8 +64,6 @@ def test_no_nan_in_critical_columns(manifest_df):
         assert manifest_df[col].isna().sum() == 0
 
 
-# Paths are relative and resolve to real files
-
 def test_paths_are_relative(manifest_df):
     for col in ["image_path", "vibration_file"]:
         for path_str in manifest_df[col]:
@@ -82,8 +78,6 @@ def test_sample_of_paths_exist_on_disk(manifest_df, project_root):
         assert img_path.exists(), f"Missing image file: {img_path}"
         assert vib_path.exists(), f"Missing vibration file: {vib_path}"
 
-
-# Vibration window indices in bounds
 
 def test_window_indices_in_bounds(manifest_df, project_root, config):
     window_size = config["window_size"]
@@ -102,7 +96,6 @@ def test_window_indices_in_bounds(manifest_df, project_root, config):
         )
 
 
-# Fault-type matching correctness
 def test_vibration_fault_type_matches_assigned_fault_class(manifest_df, project_root, config):
     code_to_name = {ft["code"]: ft["name"] for ft in config["cwru"]["fault_types"]}
     defective_rows = manifest_df[manifest_df.is_defect == 1]
@@ -161,8 +154,6 @@ def test_different_seed_can_produce_different_pairing():
     n_different = (df1_defective["vibration_file"] != df2_defective["vibration_file"]).sum()
     assert n_different > 0, "Different seeds produced identical vibration pairing"
 
-
-# Category / defect-type scoping
 
 def test_only_configured_categories_present(manifest_df, config):
     assert set(manifest_df["category"].unique()) <= set(config["mvtec"]["categories"])

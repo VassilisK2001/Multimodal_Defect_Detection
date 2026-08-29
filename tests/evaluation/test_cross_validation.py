@@ -10,7 +10,6 @@ import torch
 from defect_detection.evaluation.cross_validation import aggregate_cv_results, run_kfold_cv
 
 
-
 def _fake_fold_df(fold_idx: int) -> pd.DataFrame:
     return pd.DataFrame({
         "split": ["train", "train", "val", "test"],

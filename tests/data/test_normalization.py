@@ -107,8 +107,7 @@ def test_zero_variance_guard():
 
 def test_deterministic_across_calls():
     """Repeated calls on the same data should return identical results."""
-    window_size = 2048  # comfortably larger than spectral_kurtosis's internal STFT
-                         # window (nperseg=256), to avoid a scipy fallback warning
+    window_size = 2048   
     fs = 12000
     signal = np.random.default_rng(3).standard_normal(window_size * 4).astype(np.float32)
     df = pd.DataFrame({"vibration_file": ["a"] * 4, "vibration_window_idx": [0, 1, 2, 3]})

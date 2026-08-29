@@ -40,8 +40,6 @@ def split_df(manifest_df) -> pd.DataFrame:
     return split_manifest(manifest_df, seed=42)
 
 
-# No window-index overlap across splits for the same file
-
 def test_no_window_index_overlap_across_splits(split_df):
     """For every vibration_file used in more than one split, the set of window indices
     used by train, val, and test must be pairwise disjoint"""
@@ -59,8 +57,6 @@ def test_no_window_index_overlap_across_splits(split_df):
                     f"{split_names[i]} and {split_names[j]}: {overlap}"
                 )
 
-
-# Window indices fall within their split's computed block
 
 def test_window_indices_within_correct_block(split_df, project_root, config):
     """Each row's vibration_window_idx must fall within the block boundaries computed
@@ -87,8 +83,6 @@ def test_window_indices_within_correct_block(split_df, project_root, config):
         )
 
 
-# Window indices within the file's actual bounds
-
 def test_window_indices_in_file_bounds(split_df, project_root, config):
     """No vibration_window_idx should be negative or exceed the file's actual n_windows,
     re-verified after redrawing"""
@@ -101,8 +95,6 @@ def test_window_indices_in_file_bounds(split_df, project_root, config):
         assert 0 <= row.vibration_window_idx < n_windows
 
 
-# Row count and sample_id preservation
-
 def test_all_rows_preserved_no_duplicates(manifest_df, split_df):
     """split_manifest must not drop or duplicate rows: the union of sample_ids across
     train/val/test must exactly equal the original manifest's sample_ids."""
@@ -110,8 +102,6 @@ def test_all_rows_preserved_no_duplicates(manifest_df, split_df):
     assert set(split_df["sample_id"]) == set(manifest_df["sample_id"])
     assert split_df["sample_id"].is_unique
 
-
-# Stratification balance
 
 def test_is_defect_ratio_consistent_across_splits(split_df):
     """The proportion of defective samples should be similar across train/val/test,
@@ -123,8 +113,7 @@ def test_is_defect_ratio_consistent_across_splits(split_df):
 
 
 def test_fault_class_proportions_consistent_across_splits(split_df):
-    """Each fault type's share of defective samples should be similar across splits,
-    the direct purpose of stratifying on the combined is_defect + fault_class key."""
+    """Each fault type's share of defective samples should be similar across splits."""
     defective = split_df[split_df.is_defect == 1]
     proportions = (
         defective.groupby("split")["fault_class"]
@@ -139,9 +128,7 @@ def test_fault_class_proportions_consistent_across_splits(split_df):
         )
 
 
-# Split ratios approximately match config
-
-def test_split_sizes_approximately_match_config(split_df, config):
+def test_split_sizes_approx_match_config(split_df, config):
     total = len(split_df)
     actual_fracs = split_df["split"].value_counts(normalize=True)
 
@@ -153,8 +140,6 @@ def test_split_sizes_approximately_match_config(split_df, config):
         )
 
 
-# Reproducibility
-
 def test_same_seed_produces_identical_split(manifest_df):
     df1 = split_manifest(manifest_df, seed=123)
     df2 = split_manifest(manifest_df, seed=123)
@@ -164,8 +149,6 @@ def test_same_seed_produces_identical_split(manifest_df):
 
     pd.testing.assert_frame_equal(df1_sorted, df2_sorted)
 
-
-# Replacement-sampling fallback, tested with a controlled synthetic case
 
 def test_replacement_fallback_triggers_when_block_smaller_than_demand(project_root, config, monkeypatch):
     """When more rows need a window from a given file+split block than the block has

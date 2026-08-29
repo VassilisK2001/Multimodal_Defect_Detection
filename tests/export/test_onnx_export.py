@@ -1,9 +1,3 @@
-"""
-tests/export/test_onnx_export.py
-
-Tests for src/defect_detection/export/onnx_export.py.
-"""
-
 import time
 from unittest.mock import MagicMock
 
@@ -34,8 +28,6 @@ def sample_inputs():
     return torch.randn(1, 3, 224, 224), torch.randn(1, 5)
 
 
-# --- FusionModelWithActivations -----------------------------------------------------------
-
 def test_wrapper_applies_sigmoid_and_softmax(wrapped_model, sample_inputs):
     image, vib = sample_inputs
 
@@ -44,8 +36,6 @@ def test_wrapper_applies_sigmoid_and_softmax(wrapped_model, sample_inputs):
     assert torch.all(defect_proba >= 0) and torch.all(defect_proba <= 1)
     assert torch.allclose(fault_proba.sum(dim=1), torch.ones(1), atol=1e-5)
 
-
-# --- export_model_to_onnx ---------------------------------------------------------------
 
 def test_exported_model_handles_a_different_batch_size_than_tracing(wrapped_model, sample_inputs, tmp_path):
     """Verifies dynamic_axes allows a batch size different from the one used
@@ -65,8 +55,6 @@ def test_exported_model_handles_a_different_batch_size_than_tracing(wrapped_mode
     assert defect_proba.shape[0] == 3
     assert fault_proba.shape[0] == 3
 
-
-# --- run_parity_check ------------------------------------------------------------------
 
 def test_parity_check_passes_when_outputs_genuinely_match(wrapped_model, sample_inputs, tmp_path):
     image, vib = sample_inputs
@@ -93,8 +81,6 @@ def test_parity_check_detects_a_real_mismatch(wrapped_model, sample_inputs):
 
     assert result["passed"] is False
 
-
-# --- make_torch_runner / make_onnx_runner ----------------------------------------------
 
 def test_torch_runner_actually_invokes_the_model(wrapped_model, sample_inputs):
     image, vib = sample_inputs
@@ -125,8 +111,6 @@ def test_onnx_runner_actually_invokes_the_session(sample_inputs):
 
     assert fake_session.run.call_count == 2
 
-
-# --- benchmark_latency ------------------------------------------------------------------
 
 def test_benchmark_excludes_warmup_calls_from_timing_but_still_makes_them():
     call_count = {"n": 0}

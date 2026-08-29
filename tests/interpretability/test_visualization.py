@@ -4,6 +4,7 @@ import pytest
 import torch
 import shap
 
+from tests.factories import CLASS_NAMES
 from defect_detection.data.features import FEATURE_NAMES
 from defect_detection.interpretability.visualization import (
     denormalize_image,
@@ -18,7 +19,6 @@ from defect_detection.interpretability.visualization import (
 )
 from defect_detection.models.fusion_model import MultimodalDefectClassifier
 
-CLASS_NAMES = ["outer_race", "inner_race", "ball"]
 
 @pytest.fixture(autouse=True)
 def close_figures_after_test():

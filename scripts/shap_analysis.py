@@ -4,6 +4,7 @@ from typing import cast
 import pandas as pd
 import torch
 
+from defect_detection.data.image_io import load_images_for_df
 from defect_detection.data.features import extract_raw_vib_features_from_df
 from defect_detection.data.normalization import apply_vibration_normalization
 from defect_detection.interpretability.example_selection import (
@@ -15,7 +16,6 @@ from defect_detection.interpretability.shap_explain import (
     check_additivity_per_instance,
     compute_shap_batched,
     compute_shap_per_instance,
-    load_images_for_df,
     make_vib_predict_fn,
     select_head1_background_rows,
     select_head2_background_rows,
@@ -29,7 +29,6 @@ from defect_detection.interpretability.visualization import (
 )
 from defect_detection.mlflow_utils import load_model_and_stats
 from defect_detection.utils import find_project_root, load_yaml_config
-
 
 
 logger = logging.getLogger(__name__)
@@ -72,7 +71,7 @@ if __name__ == "__main__":
     defective_subset = cast(pd.DataFrame, test_subset[test_subset.is_defect == 1])
     defective_raw = extract_raw_vib_features_from_df(defective_subset, window_size, fs)
 
-    # --- Vibration-only ---
+
     logger.info("Computing SHAP values: vibration-only, Head 1...")
     vib_defect_predict_fn = make_vib_predict_fn(vib_model, head="defect")
     test_norm_vib_h1 = apply_vibration_normalization(test_raw, vib_mean_v, vib_std_v)

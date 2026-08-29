@@ -262,25 +262,5 @@ def split_manifest(manifest_df: pd.DataFrame, seed: int = 42) -> pd.DataFrame:
     split_df = _stratified_image_split(manifest_df, val_frac=val_frac, test_frac=test_frac, seed=seed)
     split_df = _redraw_window_indices(split_df, project_root, window_size, rng,
                                        train_frac=train_frac, val_frac=val_frac)
- 
+
     return split_df.reset_index(drop=True)
- 
- 
-if __name__ == "__main__":
-    config = load_yaml_config("config/data_config.yaml")
-    project_root = find_project_root()
- 
-    manifest_path = project_root / config["paths"]["manifest_dir"] / "manifest.csv"
-    manifest_df = pd.read_csv(manifest_path)
- 
-    result_df = split_manifest(manifest_df)
- 
-    out_dir = project_root / config["paths"]["manifest_dir"]
-    for split_name in ["train", "val", "test"]:
-        subset = result_df[result_df.split == split_name].drop(columns=["split"])
-        out_path = out_dir / f"{split_name}.csv"
-        subset.to_csv(out_path, index=False)
-        print(f"{split_name}: {len(subset)} rows -> {out_path}")
-        print(subset["is_defect"].value_counts().to_dict())
-        print(subset["fault_class"].value_counts().to_dict())
-        print()

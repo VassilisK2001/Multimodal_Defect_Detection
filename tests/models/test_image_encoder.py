@@ -7,8 +7,6 @@ from defect_detection.models.image_encoder import (
 )
 
 
-# Output shape 
-
 def test_output_shape_matches_embedding_dim():
     """Output shape should be (batch, embedding_dim)."""
     encoder = build_image_encoder(embedding_dim=128)
@@ -24,8 +22,6 @@ def test_different_embedding_dims_are_respected():
         output = encoder(torch.randn(2, 3, 224, 224))
         assert output.shape == (2, dim)
 
-
-# Layer freezing
 
 def test_layers_before_unfreeze_point_are_frozen():
     """Modules preceding unfreeze_from should have requires_grad=False."""
@@ -57,8 +53,6 @@ def test_different_unfreeze_point_changes_which_layers_are_trainable():
         assert param.requires_grad
 
 
-# count_trainable_parameters
-
 def test_count_trainable_parameters_matches_requires_grad():
     """Reported counts should match a direct requires_grad-based count."""
     encoder = build_image_encoder(unfreeze_from="layer4")
@@ -72,8 +66,6 @@ def test_count_trainable_parameters_matches_requires_grad():
     assert 0 < trainable < total
 
 
-# Pretrained weights
-
 def test_pretrained_weights_differ_from_random_init():
     """Pretrained weights should differ from a freshly random-initialized model."""
     pretrained_encoder = build_image_encoder()
@@ -84,8 +76,6 @@ def test_pretrained_weights_differ_from_random_init():
 
     assert not torch.allclose(pretrained_conv1, random_conv1)
 
-
-# Gradient flow
 
 def test_frozen_parameters_receive_no_gradient():
     """After a forward and backward pass, frozen layers should have no gradient and

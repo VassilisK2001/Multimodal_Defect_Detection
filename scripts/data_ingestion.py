@@ -1,54 +1,27 @@
+import logging
 
-import shutil
-from pathlib import Path
-import kagglehub
+from defect_detection.data.ingestion import download_dataset, verify_structure
+from defect_detection.utils import find_project_root
 
-RAW_DATA_DIR = Path("data/raw")
-MVTEC_DIR = RAW_DATA_DIR / "mvtec"
-CWRU_DIR = RAW_DATA_DIR / "cwru"
+logger = logging.getLogger(__name__)
+
 
 MVTEC_KAGGLE_SLUG = "ipythonx/mvtec-ad"      
 CWRU_KAGGLE_SLUG = "astrollama/cwru-case-western-reserve-university-dataset" 
 
 
-def download_dataset(slug: str, target_dir: Path, name: str) -> None:
-    if target_dir.exists() and any(target_dir.iterdir()):
-        print(f"[{name}] already present at {target_dir}, skipping download")
-        return
-
-    print(f"[{name}] downloading via kagglehub...")
-    cache_path = Path(kagglehub.dataset_download(slug))
-    print(f"[{name}] downloaded to cache: {cache_path}")
-
-    target_dir.mkdir(parents=True, exist_ok=True)
-    for item in cache_path.iterdir():
-        dest = target_dir / item.name
-        if item.is_dir():
-            shutil.copytree(item, dest, dirs_exist_ok=True)
-        else:
-            shutil.copy2(item, dest)
-
-    print(f"[{name}] copied into {target_dir}")
-
-
-def verify_structure() -> None:
-    print("\nVerifying dataset structure...")
-
-    mvtec_categories = [d.name for d in MVTEC_DIR.iterdir() if d.is_dir()] if MVTEC_DIR.exists() else []
-    print(f"MVTec categories found: {mvtec_categories}")
-
-    cwru_files = list(CWRU_DIR.rglob("*.mat")) if CWRU_DIR.exists() else []
-    print(f"CWRU .mat files found: {len(cwru_files)}")
-    if cwru_files:
-        print(f"  example: {cwru_files[0]}")
-
-
-def main():
-    RAW_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    download_dataset(MVTEC_KAGGLE_SLUG, MVTEC_DIR, "MVTec AD")
-    download_dataset(CWRU_KAGGLE_SLUG, CWRU_DIR, "CWRU")
-    verify_structure()
-
-
 if __name__ == "__main__":
-    main()
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+                         force=True)
+
+    project_root = find_project_root()
+    raw_data_dir = project_root / "data" / "raw"
+    mvtec_dir = raw_data_dir / "mvtec"
+    cwru_dir = raw_data_dir / "cwru"
+
+    raw_data_dir.mkdir(parents=True, exist_ok=True)
+
+    download_dataset(MVTEC_KAGGLE_SLUG, mvtec_dir, "MVTec AD")
+    download_dataset(CWRU_KAGGLE_SLUG, cwru_dir, "CWRU")
+
+    verify_structure(mvtec_dir, cwru_dir)

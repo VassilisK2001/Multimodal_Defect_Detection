@@ -66,7 +66,7 @@ if __name__ == "__main__":
                 parity_result["defect_matches"], parity_result["fault_matches"])
     if not parity_result["passed"]:
         raise RuntimeError(
-            "ONNX export failed the parity check — exported model's probability outputs do not "
+            "ONNX export failed the parity check. Exported model's probability outputs do not "
             "match the original PyTorch model's. Do not deploy this artifact."
         )
 

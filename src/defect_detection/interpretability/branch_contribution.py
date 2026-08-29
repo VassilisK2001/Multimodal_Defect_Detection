@@ -7,7 +7,7 @@ from captum.attr import ShapleyValues
 
 from defect_detection.data.features import extract_raw_vib_features_from_df
 from defect_detection.data.normalization import apply_vibration_normalization
-from defect_detection.interpretability.shap_explain import load_images_for_df
+from defect_detection.data.image_io import load_images_for_df
 from defect_detection.models.fusion_model import MultimodalDefectClassifier
 
 

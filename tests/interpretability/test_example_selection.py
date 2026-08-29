@@ -1,13 +1,12 @@
 import numpy as np
 
+from tests.factories import CLASS_NAMES
 from defect_detection.interpretability.example_selection import (
     find_defect_gate_examples,
     find_fault_type_examples,
     find_vibration_fails_fusion_succeeds_examples,
     find_correct_normal_examples,
 )
-
-CLASS_NAMES = ["outer_race", "inner_race", "ball"]
 
 
 def test_defect_gate_cases_correctly_identified():

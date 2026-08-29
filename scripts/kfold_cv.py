@@ -1,5 +1,5 @@
-
 import argparse
+import logging
 
 import pandas as pd
 import torch
@@ -8,7 +8,13 @@ from defect_detection.evaluation.cross_validation import aggregate_cv_results, r
 from defect_detection.evaluation.reporting import save_cv_results
 from defect_detection.utils import find_project_root, load_yaml_config
 
+logger = logging.getLogger(__name__)
+
+
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+                         force=True)
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--modality", choices=["both", "image", "vibration", "all"], default="all")
     parser.add_argument("--k", type=int, default=3)
@@ -26,7 +32,8 @@ if __name__ == "__main__":
     output_dir = project_root / data_config["paths"]["reports_dir"] / "cv_evaluation" / f"seed{args.seed}"
 
     for modality in modalities:
-        print(f"Running {args.k}-fold CV for '{modality}' (seed={args.seed}, {args.k} training runs)...")
+        logger.info("Running %d-fold CV for '%s' (seed=%d, %d training runs)...",
+                    args.k, modality, args.seed, args.k)
 
         fold_results = run_kfold_cv(
             modality=modality, manifest_df=manifest_df,
@@ -38,7 +45,7 @@ if __name__ == "__main__":
 
         defect_f1 = aggregated["defect_metrics"]["defect"]["f1"]
         fault_macro_f1 = aggregated["fault_metrics"]["macro_f1"]
-        print(f"  defect F1: {defect_f1['mean']:.3f} \u00b1 {defect_f1['std']:.3f}")
-        print(f"  fault macro-F1: {fault_macro_f1['mean']:.3f} \u00b1 {fault_macro_f1['std']:.3f}")
+        logger.info("  defect F1: %.3f \u00b1 %.3f", defect_f1["mean"], defect_f1["std"])
+        logger.info("  fault macro-F1: %.3f \u00b1 %.3f", fault_macro_f1["mean"], fault_macro_f1["std"])
 
-    print(f"\nResults saved to {output_dir}")
+    logger.info("Results saved to %s", output_dir)

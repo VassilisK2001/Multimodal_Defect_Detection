@@ -8,7 +8,7 @@ from PIL import Image
 DEPLOYMENT_DIR = Path(__file__).resolve().parents[3] / "deployment"
 sys.path.insert(0, str(DEPLOYMENT_DIR))
 
-from inference.preprocessing import (  # noqa: E402
+from inference.preprocessing import ( 
     FEATURE_NAMES,
     IMAGENET_MEAN,
     IMAGENET_STD,

@@ -188,9 +188,7 @@ def _fake_train_val_df() -> pd.DataFrame:
  
 def _fake_config_side_effect(path: str) -> dict:
     """Returns minimal, self-contained configs for train_from_dataframes, keyed by
-    the path argument load_yaml_config is called with — avoids depending on the
-    real project config files' current contents (e.g. max_epochs) for test speed
-    and isolation.
+    the path argument load_yaml_config is called with.
     """
     if "data_config" in path:
         return {"window_size": 2048, "cwru": {"sampling_rate_hz": 12000}}
@@ -233,9 +231,7 @@ def _run_train_from_dataframes_with_mocks(register_model: bool):
  
     return mock_mlflow, mock_pt
  
- 
-# --- register_model flag --------------------------------------------------------------
- 
+  
 def test_register_model_false_skips_registration():
     """register_model=False should skip both model logging and Model Registry
     registration."""

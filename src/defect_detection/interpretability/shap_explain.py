@@ -204,25 +204,6 @@ def compute_shap_per_instance(model: MultimodalDefectClassifier, head: str, back
                              data=test_features_raw, feature_names=FEATURE_NAMES)
 
 
-def load_images_for_df(df: pd.DataFrame, project_root) -> torch.Tensor:
-    """Load and transform each row's real image, matching MultimodalDefectDataset's
-    own image pipeline.
-
-    Args:
-        df: Manifest rows, with an 'image_path' column.
-        project_root: Project root, as returned by find_project_root().
-
-    Returns:
-        (len(df), 3, H, W) stacked, transformed image tensor.
-    """
-    from defect_detection.data.augmentations import build_image_transform
-    from PIL import Image
-
-    transform = build_image_transform(training=False)
-    images = [transform(Image.open(project_root / p).convert("RGB")) for p in df["image_path"]]
-    return torch.stack(images)
-
-
 def approximate_predictions_from_shap(shap_values: shap.Explanation) -> np.ndarray:
     """Reconstruct approximate model output from
     already-computed SHAP values via the additivity relationship

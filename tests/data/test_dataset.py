@@ -42,14 +42,10 @@ def train_dataset(manifest_df, config) -> MultimodalDefectDataset:
     )
 
 
-# __len__
-
 def test_len_matches_manifest_row_count(eval_dataset, manifest_df):
     """The Dataset should expose exactly one item per manifest row, no dropped/duplicated rows."""
     assert len(eval_dataset) == len(manifest_df)
 
-
-# __getitem__ shapes and dtypes
 
 def test_getitem_returns_expected_shapes_and_dtypes(eval_dataset):
     """Output must match what the model architecture expects: (3,224,224) image,
@@ -80,8 +76,6 @@ def test_getitem_no_nans_in_features(eval_dataset):
     assert not torch.isinf(vib).any()
 
 
-# is_defect / fault_class_idx consistency survives the Dataset layer
-
 def test_normal_rows_have_sentinel_fault_class_idx(eval_dataset, manifest_df):
     """Rows where is_defect == 0 in the manifest must come out of the Dataset with
     fault_class_idx == -1, matching the masking convention TwoStageLoss depends on."""
@@ -100,8 +94,6 @@ def test_defective_rows_have_valid_fault_class_idx(eval_dataset, manifest_df):
         assert is_defect.item() == 1.0
         assert fault_idx.item() in {0, 1, 2}
 
-
-# training vs. eval mode
 
 def test_eval_mode_is_deterministic(eval_dataset):
     """No augmentation in eval mode, so fetching the same index twice must give identical
@@ -123,8 +115,6 @@ def test_training_mode_applies_vibration_augmentation(train_dataset):
     assert not torch.allclose(vib1, vib2)
 
 
-# .mat caching
-
 def test_mat_file_is_cached_after_first_access(eval_dataset, manifest_df):
     """Accessing two rows that share the same vibration_file should only populate one
     cache entry, confirming the cache key is the file path and repeated reads are avoided."""
@@ -140,8 +130,6 @@ def test_mat_file_is_cached_after_first_access(eval_dataset, manifest_df):
     assert shared_file in eval_dataset._mat_cache
     assert len(eval_dataset._mat_cache) == 1
 
-
-# Vibration normalization
 
 def test_normalization_applied_when_stats_provided(manifest_df, config):
     """When vib_mean/vib_std are provided, output features should equal
@@ -174,8 +162,6 @@ def test_normalization_not_applied_when_stats_are_none(eval_dataset, manifest_df
     _, vib, _, _, _ = eval_dataset[row_idx]
     assert not torch.allclose(vib, torch.zeros(5), atol=0.5)
 
-
-# Real end-to-end sample
 
 def test_real_samples_load_without_error(eval_dataset):
     """Sanity check across a broader sample of real manifest rows: the full pipeline

@@ -6,10 +6,8 @@ import numpy as np
 DEPLOYMENT_DIR = Path(__file__).resolve().parents[3] / "deployment"
 sys.path.insert(0, str(DEPLOYMENT_DIR))
 
+from tests.factories import CLASS_NAMES
 from inference.inspection import build_inspection_result 
-
-
-CLASS_NAMES = ["outer_race", "inner_race", "ball"]
 
 
 def test_below_threshold_is_healthy_with_no_fault_fields():

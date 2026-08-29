@@ -5,8 +5,8 @@ import torch
 
 from defect_detection.evaluation.run_auc_evaluation import (
     compute_global_oof_metrics,
-    print_fold_level_summary,
-    print_global_oof_metrics,
+    log_fold_level_summary,
+    log_global_oof_metrics,
     run_oof_cross_validation,
 )
 from defect_detection.evaluation.reporting import save_oof_results
@@ -40,12 +40,12 @@ if __name__ == "__main__":
     logger.info("Step 1-2/6 complete.")
 
     logger.info("Step 3/6: fold-level summary")
-    print_fold_level_summary(oof_results, class_names)
+    log_fold_level_summary(oof_results, class_names)
     logger.info("Step 3/6 complete.")
 
     logger.info("Step 4/6: computing global OOF ROC/PR AUC...")
     global_metrics = compute_global_oof_metrics(oof_results, class_names)
-    print_global_oof_metrics(global_metrics, class_names)
+    log_global_oof_metrics(global_metrics, class_names)
     logger.info("Step 4/6 complete.")
 
     logger.info("Step 5/6: plotting defect gate ROC/PR curves ...")

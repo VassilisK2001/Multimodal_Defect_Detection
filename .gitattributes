@@ -1,3 +1,0 @@
-deployment/artifacts/*.onnx filter=lfs diff=lfs merge=lfs -text
-deployment/demo_samples/**/*.npy filter=lfs diff=lfs merge=lfs -text
-deployment/demo_samples/**/*.png filter=lfs diff=lfs merge=lfs -text

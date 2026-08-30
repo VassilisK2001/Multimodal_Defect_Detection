@@ -1,3 +1,14 @@
+"""
+Builds the project's manifest: pairs each MVTec AD image with a CWRU
+vibration file/window matching its fault type (severity and window index
+chosen at random from the matching pool).
+
+Exported functions:
+    build_manifest(config_path, seed): indexes both datasets and returns 
+    the full paired manifest as a DataFrame.
+"""
+
+
 import logging
 import random
 import re
@@ -76,7 +87,7 @@ def build_mvtec_records(mvtec_dir: Path, config: dict, project_root: Path) -> li
     for category in config["mvtec"]["categories"]:
         category_defect_map = defect_to_fault_map.get(category, {})
 
-        # 'good' images from both train/ and test/ — pooled, since MVTec's official
+        # 'good' images from both train/ and test/ pooled, since MVTec's official
         # train/test split is designed for unsupervised AD, not this project's use case
         for split_dir in ["train", "test"]:
             good_dir = mvtec_dir / category / split_dir / "good"

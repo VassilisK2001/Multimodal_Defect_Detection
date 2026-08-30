@@ -1,3 +1,9 @@
+"""
+Computes the 5 vibration features (RMS, Peak, Crest Factor,
+Spectral Kurtosis, TKEO) from a raw signal window.
+"""
+
+
 import numpy as np
 import pandas as pd
 from scipy.signal import stft

@@ -1,3 +1,6 @@
+"""
+Tests for src/defect_detection/evaluation/category_baseline.py.
+"""
 
 import numpy as np
 import pandas as pd

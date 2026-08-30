@@ -1,3 +1,8 @@
+"""
+Tests for src/defect_detection/interpretability/example_selection.py.
+"""
+
+
 import numpy as np
 
 from tests.factories import CLASS_NAMES

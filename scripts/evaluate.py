@@ -1,3 +1,10 @@
+"""
+Evaluates three separately trained models, one receiving both image and
+vibration inputs ('both'), one receiving only images ('image'), and one
+receiving only vibration signal data ('vibration') on the test set, 
+saving per-model results and a summary CSV.
+"""
+
 import logging
 
 import pandas as pd

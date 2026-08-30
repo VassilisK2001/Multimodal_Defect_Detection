@@ -1,3 +1,7 @@
+"""
+Tests for src/defect_detection/evaluation/reporting.py.
+"""
+
 
 import json
 

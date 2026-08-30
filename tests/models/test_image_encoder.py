@@ -1,3 +1,7 @@
+"""
+Tests for src/defect_detection/models/image_encoder.py.
+"""
+
 
 import torch
 from torchvision.models import resnet18

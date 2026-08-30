@@ -1,3 +1,11 @@
+"""
+Leave-file-out diagnostic: holds out one CWRU file per fault type entirely
+from training, evaluating specifically on that held-out file's windows.
+Tests whether the vibration-only model's strong cross-validation performance
+reflects genuine generalization to new files, or memorization of the small,
+fixed pool of vibration files reused across training.
+"""
+
 
 import pandas as pd
 import torch

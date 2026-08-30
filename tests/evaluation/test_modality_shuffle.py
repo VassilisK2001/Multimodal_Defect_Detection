@@ -1,3 +1,7 @@
+"""
+Tests for src/defect_detection/evaluation/modality_shuffle.py.
+"""
+
 
 from unittest.mock import MagicMock, patch
 

@@ -1,3 +1,7 @@
+"""
+Tests for src/defect_detection/models/fusion_model.py.
+"""
+
 
 import pytest
 import torch

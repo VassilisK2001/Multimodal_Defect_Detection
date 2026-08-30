@@ -1,3 +1,7 @@
+"""
+Tests for src/defect_detection/data/manifest.py.
+"""
+
 
 import re
 from pathlib import Path

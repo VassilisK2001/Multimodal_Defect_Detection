@@ -1,3 +1,13 @@
+"""
+Computes and applies z-score normalization for vibration features, using
+statistics computed once from the training split only.
+
+Exported functions:
+    compute_vibration_feature_stats(train_dataset): computes per-feature
+        mean/std from a training dataset.
+    apply_vibration_normalization(features, mean, std):applies the
+        precomputed normalization to a feature vector.
+"""
 
 from typing import Protocol, runtime_checkable
 

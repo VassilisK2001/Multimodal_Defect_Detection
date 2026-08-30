@@ -1,3 +1,6 @@
+"""
+Tests for src/defect_detection/evaluation/cross_validation.py.
+"""
 
 from contextlib import contextmanager
 from unittest.mock import MagicMock, patch

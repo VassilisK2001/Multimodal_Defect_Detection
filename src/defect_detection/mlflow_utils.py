@@ -1,3 +1,21 @@
+"""
+Loads registered MultimodalDefectClassifier models and their vibration
+normalization stats from MLflow. Stats are loaded per run_id, not per
+model, since they were logged as a training-run artifact
+(vib_normalization_stats.npz) alongside the model, not stored in the
+Model Registry itself.
+
+Exported functions:
+    get_run_id_for_model_version(modality, version): resolves a
+        registered model version to the run that produced it.
+    load_registered_model(modality, version, device): loads the model
+        itself from the Model Registry.
+    load_vib_stats_for_run(run_id): loads (vib_mean, vib_std) from a
+        specific run's logged artifact.
+    load_model_and_stats(modality, version, device): composes the three functions 
+    above into (model, vib_mean, vib_std).
+"""
+
 
 import numpy as np
 import mlflow

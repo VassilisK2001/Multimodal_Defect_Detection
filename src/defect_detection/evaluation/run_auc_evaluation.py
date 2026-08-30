@@ -1,3 +1,9 @@
+""" 
+Out-of-fold (OOF) cross-validation evaluation across all three modalities, sharing
+one stratified k-fold split so every model's OOF predictions are directly
+comparable on identical data.
+"""
+
 import logging
 from typing import cast
 

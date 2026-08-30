@@ -1,3 +1,8 @@
+"""
+Tests for src/defect_detection/deployment/utils.py.
+"""
+
+
 import json
 import sys
 from pathlib import Path

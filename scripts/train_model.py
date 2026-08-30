@@ -1,7 +1,6 @@
 """
-scripts/train_model.py
-
-Trains a MultimodalDefectClassifier for the given modality and registers it.
+Trains a MultimodalDefectClassifier for the given modality 
+and registers the resulting model in MLflow model registry.
 
 Usage:
     python scripts/train_model.py --modality both

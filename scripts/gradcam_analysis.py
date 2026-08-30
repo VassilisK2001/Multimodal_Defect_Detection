@@ -1,3 +1,11 @@
+"""
+Grad-CAM analysis of the fusion model's ('both') image branch
+(convolutional encoder), on the test set:
+- Defect gate: correct-defective / false-negative / false-positive
+- Fault type: correct / misclassified, per class, explaining the predicted
+  class
+"""
+
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader

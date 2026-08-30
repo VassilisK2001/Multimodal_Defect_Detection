@@ -1,3 +1,8 @@
+""" 
+Tests for src/defect_detection/data/ingestion.py.
+"""
+
+
 from unittest.mock import patch
 
 from defect_detection.data.ingestion import download_dataset, verify_structure

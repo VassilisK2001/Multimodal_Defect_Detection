@@ -1,3 +1,22 @@
+"""
+Selects specific example row indices from evaluation predictions for
+Grad-CAM inspection: correct/false-negative/false-positive for the defect
+gate, and correct/misclassified per fault class. Returns up to n matches per
+case, not just the first, so a small gallery can be built rather than a
+single example.
+
+Exported functions:
+    find_defect_gate_examples(predictions, n): defect-gate example rows.
+    find_correct_normal_examples(predictions): all correctly-predicted
+        normal rows, unsliced (a candidate pool, not a fixed sample size).
+    find_fault_type_examples(predictions, class_names, n): per-class
+        correct/misclassified fault-type example rows.
+    find_vibration_fails_fusion_succeeds_examples(...): rows where the
+        vibration-only model's defect prediction was wrong but the fusion
+        model's was correct.
+"""
+
+
 import numpy as np
 
 def find_defect_gate_examples(predictions: dict, n: int = 3) -> dict:

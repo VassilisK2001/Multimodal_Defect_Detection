@@ -1,3 +1,17 @@
+"""
+Selects and extracts test-set rows as preloaded demo samples for the
+deployed app.
+
+Exported functions:
+    select_demo_rows(test_df, ...): picks rows per scenario, preferring
+        correctly-classified examples over random selection.
+    write_demo_sample(row, ...): writes one row's real image and raw
+        vibration window to disk.
+    build_manifest_entry(...): builds one manifest.json entry (ground
+        truth) for a written sample.
+"""
+
+
 import shutil
 from pathlib import Path
 from typing import Optional

@@ -1,3 +1,10 @@
+"""
+Category-only baseline: trains a simple classifier predicting fault_class
+from MVTec category alone (no image or vibration input), to test whether
+the image branch's fault-type contribution could be explained by category
+recognition rather than genuine defect appearance.
+"""
+
 
 from typing import cast
 

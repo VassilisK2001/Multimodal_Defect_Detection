@@ -1,3 +1,11 @@
+"""
+Exports the deployed fusion model ('both') to ONNX,
+with sigmoid/softmax fused into the graph. Verifies the export against the
+original PyTorch model's outputs on a test row, then benchmarks ONNX Runtime's 
+latency against the original PyTorch model's.
+"""
+
+
 import json
 import logging
 

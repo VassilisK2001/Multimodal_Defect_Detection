@@ -1,3 +1,6 @@
+"""
+Unit tests for src/defect_detection/data/augmentations.py
+"""
 
 import numpy as np
 import pytest

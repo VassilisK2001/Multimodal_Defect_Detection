@@ -1,3 +1,21 @@
+"""
+Trains a MultimodalDefectClassifier for a given modality ('both', 'image',
+or 'vibration'), while also tracking the training run with MLflow experiment
+tracking and model registry integration.
+
+Exported functions:
+    build_datasets(...) / build_optimizer(...): dataset/optimizer setup.
+    train_one_epoch(...) / evaluate(...): one epoch of training or
+        evaluation, returning loss/accuracy for both heads.
+    train_from_dataframes(train_df, val_df, ...): the core training loop,
+        given train/val dataframes directly; reused wherever a specific
+        split needs training (cross-validation, OOF studies, bootstrap
+        threshold tuning), not just the fixed train.csv/val.csv.
+    train(...): the standard entry point: loads train.csv/val.csv from
+        disk, then delegates to train_from_dataframes(...).
+"""
+
+
 import logging
 import tempfile
 from pathlib import Path

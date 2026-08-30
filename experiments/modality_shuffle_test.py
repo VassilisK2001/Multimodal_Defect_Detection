@@ -1,4 +1,19 @@
+"""
+Runs the modality shuffle test: corrupting one modality's input at a time
+across the test set, then comparing metrics before and after on the
+registered fusion model. Tests whether a modality is causally used by the
+model, not merely correlated with its predictions. A modality the model
+ignores would leave metrics unchanged when corrupted, while a modality it
+genuinely relies on should degrade performance when removed.
 
+Supports two corruption methods, 'shuffle'and 'zero'
+see src/defect_detection/evaluation/modality_shuffle.py for how each is
+implemented.
+
+Usage:
+    python experiments/modality_shuffle_test.py
+    python experiments/modality_shuffle_test.py --method zero
+"""
 import argparse
 
 import pandas as pd

@@ -1,3 +1,8 @@
+"""
+Tests for src/defect_detection/interpretability/shap_explain.py.
+"""
+
+
 from types import SimpleNamespace
 from typing import cast
 

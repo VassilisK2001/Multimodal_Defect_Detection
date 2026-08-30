@@ -1,3 +1,6 @@
+"""
+Tests for src/defect_detection/data/splitting.py.
+"""
 
 from pathlib import Path
 

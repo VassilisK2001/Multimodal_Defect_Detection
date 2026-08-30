@@ -1,3 +1,7 @@
+"""
+Tests for src/defect_detection/evaluation/visualization.py.
+"""
+
 
 import matplotlib.pyplot as plt
 import numpy as np

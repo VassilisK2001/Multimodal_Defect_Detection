@@ -1,3 +1,9 @@
+"""
+Modality shuffle test: corrupts one modality's input at a time (via
+shuffling across rows, or zeroing out) and measures how much a trained
+model's predictions change, as an indicator of how much that modality
+causally contributes versus being merely correlated with the outcome.
+"""
 
 import numpy as np
 import pandas as pd

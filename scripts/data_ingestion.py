@@ -1,3 +1,9 @@
+"""
+Downloads the MVTec AD and CWRU raw datasets, 
+then verifies their top-level structure.
+"""
+
+
 import logging
 
 from defect_detection.data.ingestion import download_dataset, verify_structure

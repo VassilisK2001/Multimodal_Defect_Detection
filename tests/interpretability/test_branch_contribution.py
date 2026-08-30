@@ -1,3 +1,8 @@
+"""
+Tests for src/defect_detection/interpretability/branch_contribution.py.
+"""
+
+
 import numpy as np
 import pandas as pd
 import pytest

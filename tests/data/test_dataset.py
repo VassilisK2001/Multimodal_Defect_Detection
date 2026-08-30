@@ -1,3 +1,7 @@
+"""
+Integration tests for src/defect_detection/data/dataset.py.
+"""
+
 
 from pathlib import Path
 

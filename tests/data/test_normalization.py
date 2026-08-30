@@ -1,3 +1,7 @@
+""" 
+Tests for src/defect_detection/data/normalization.py.
+"""
+
 
 import numpy as np
 import pandas as pd

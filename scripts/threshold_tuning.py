@@ -1,3 +1,12 @@
+"""
+Tunes the defect-gate threshold for the final deployment model ('both') via
+stratified bootstrap resampling of its own validation-set predictions,
+reporting the threshold/recall/precision distribution across resamples, then
+generates the final precision/recall/F1/confusion-matrix report for both
+heads on the test set at the mean bootstrap threshold.
+"""
+
+
 import json
 import logging
 

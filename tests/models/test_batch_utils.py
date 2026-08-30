@@ -1,3 +1,7 @@
+"""
+Tests for src/defect_detection/models/batch_utils.py.
+"""
+
 
 import pytest
 import torch

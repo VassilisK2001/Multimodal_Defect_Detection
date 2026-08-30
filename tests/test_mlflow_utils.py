@@ -1,3 +1,7 @@
+"""
+Tests for src/defect_detection/mlflow_utils.py.
+"""
+
 
 import os
 import tempfile

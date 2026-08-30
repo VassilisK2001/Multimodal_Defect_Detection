@@ -1,3 +1,16 @@
+"""
+Raw dataset download (via kagglehub) and structure verification for the
+MVTec AD and CWRU datasets.
+
+Exported functions:
+    download_dataset(slug, target_dir, name): downloads and copies a
+        Kaggle dataset into target_dir; skips the download entirely if
+        target_dir already has content, safe to re-run.
+    verify_structure(mvtec_dir, cwru_dir): checks and reports the expected
+        top-level structure of both downloaded datasets.
+"""
+
+
 import logging
 import shutil
 from pathlib import Path

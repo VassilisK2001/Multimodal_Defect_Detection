@@ -1,4 +1,12 @@
+"""
+Diagnostic ablation: freezes the entire ResNet18 backbone (only the replaced
+fc layer trainable) to test whether the image-only baseline's severe
+training-time overfitting is capacity-driven.
 
+Usage:
+    python -m experiments.linear_probing_ablation --modality image
+    python -m experiments.linear_probing_ablation --modality both
+"""
 import argparse
 
 from defect_detection.training.train import train

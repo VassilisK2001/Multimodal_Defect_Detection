@@ -1,3 +1,8 @@
+"""
+Tests for src/defect_detection/interpretability/visualization.py.
+"""
+
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest

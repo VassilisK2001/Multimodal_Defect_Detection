@@ -1,3 +1,8 @@
+"""
+Tests for src/defect_detection/inference/thresholds.py.
+"""    
+
+
 import numpy as np
 import pytest
 

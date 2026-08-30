@@ -1,3 +1,8 @@
+"""
+Tests for src/defect_detection/evaluation/predictions.py.
+"""
+
+
 import numpy as np
 import pytest
 import torch

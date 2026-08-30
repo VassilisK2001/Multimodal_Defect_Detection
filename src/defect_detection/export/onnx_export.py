@@ -1,3 +1,20 @@
+"""
+ONNX export logic for the deployed fusion model.
+
+Exported:
+    FusionModelWithActivations: wraps the fusion model so sigmoid/softmax
+        are part of the traced graph, not a deployment-side post-processing
+        step.
+    export_model_to_onnx(...): traces and exports with dynamic batch axes.
+    run_parity_check(...): compares ONNX vs PyTorch outputs on the same
+        input
+    make_torch_runner(...) / make_onnx_runner(...): build zero-argument
+        callables for benchmark_latency().
+    benchmark_latency(fn, n_runs, n_warmup): times fn(), excluding warmup
+        calls from the measurement.
+"""
+
+
 import time
 from typing import Callable
 

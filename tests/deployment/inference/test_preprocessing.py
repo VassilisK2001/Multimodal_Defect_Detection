@@ -1,3 +1,8 @@
+"""
+Tests for src/defect_detection/deployment/inference/preprocessing.py.
+"""
+
+
 import sys
 from pathlib import Path
 

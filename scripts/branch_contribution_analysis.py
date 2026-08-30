@@ -1,3 +1,10 @@
+"""
+Computes exact 2-player Shapley branch-contribution (image vs. vibration)
+analysis for the fusion model, both heads, on the test set. Each attribution
+is averaged over k real background samples rather than a single reference
+point, avoiding single-baseline sensitivity.
+"""
+
 import logging
 from typing import cast
 

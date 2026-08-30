@@ -1,3 +1,15 @@
+"""
+Augmentation and preprocessing functions for both modalities.
+
+Exported functions:
+    jitter(window): adds small random noise to a vibration window.
+    scale(window): applies a small random amplitude scaling to a vibration
+        window.
+    build_image_transform(training): builds the image resize/normalize
+        pipeline; adds augmentation only when training=True, otherwise
+        resize/normalize only.
+"""
+
 
 import numpy as np
 from torchvision import transforms

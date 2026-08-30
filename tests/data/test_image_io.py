@@ -1,3 +1,8 @@
+"""
+Tests for src/defect_detection/data/image_io.py.
+"""
+
+
 import pandas as pd
 from PIL import Image
 

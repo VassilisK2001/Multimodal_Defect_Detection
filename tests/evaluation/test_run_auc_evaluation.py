@@ -1,3 +1,8 @@
+"""
+Tests for src/defect_detection/evaluation/run_auc_evaluation.py.
+"""   
+
+
 from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
 

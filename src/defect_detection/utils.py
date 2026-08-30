@@ -1,3 +1,7 @@
+"""
+General-purpose project utilities
+"""
+
 
 from pathlib import Path
 import yaml

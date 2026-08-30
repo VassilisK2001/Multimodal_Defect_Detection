@@ -1,3 +1,8 @@
+"""
+Tests for src/defect_detection/deployment/api.py.
+"""
+
+
 import sys
 from pathlib import Path
 

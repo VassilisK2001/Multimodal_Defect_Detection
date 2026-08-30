@@ -1,3 +1,8 @@
+"""
+Tests for src/defect_detection/interpretability/gradcam.py.
+"""
+
+
 import numpy as np
 import pytest
 import torch

@@ -1,3 +1,11 @@
+"""
+Runs stratified k-fold cross-validation by defect status and fault class
+for one or all modalities, saving per-fold and aggregated results.
+
+Usage:
+    python scripts/kfold_cv.py --modality all --k 3 --seed 42
+"""
+
 import argparse
 import logging
 

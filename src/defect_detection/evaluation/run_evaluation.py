@@ -1,3 +1,8 @@
+""" 
+Full test-set evaluation for a single registered model
+"""
+
+
 
 import torch
 from torch.utils.data import DataLoader

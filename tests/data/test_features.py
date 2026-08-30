@@ -1,3 +1,8 @@
+"""
+Tests for src/defect_detection/data/features.py.
+"""
+
+
 import pathlib
 
 import numpy as np

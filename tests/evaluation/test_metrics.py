@@ -1,3 +1,7 @@
+"""
+Tests for src/defect_detection/evaluation/metrics.py.
+"""
+
 
 import numpy as np
 import pytest

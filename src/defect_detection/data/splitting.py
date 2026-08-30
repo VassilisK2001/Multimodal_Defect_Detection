@@ -1,3 +1,20 @@
+"""
+Splits the manifest into train/val/test partitions, then redraws each row's 
+vibration_window_idx to stay within its assigned split's own window range
+preventing the same vibration file's windows from appearing in more than one split.
+
+Exported functions:
+    split_manifest(manifest_df, seed): the official train/val/test split.
+    generate_stratified_kfold_splits(manifest_df, k, seed): file-leakage-
+        aware k-fold cross-validation splits.
+    select_files_to_hold_out(manifest_df, seed): picks one vibration file
+        per fault class (plus one normal file) to hold out entirely.
+    build_leave_file_out_split(manifest_df, held_out_files, seed): builds
+        the train/val/held-out-test split given those held-out files.
+"""
+
+
+
 from pathlib import Path
 import numpy as np
 import pandas as pd

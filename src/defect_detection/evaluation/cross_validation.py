@@ -1,3 +1,15 @@
+"""
+Stratified k-fold cross-validation: trains k models per modality 
+and reports per-fold defect/fault metrics.
+
+Exported functions:
+    run_kfold_cv(modality, manifest_df, ...): trains and evaluates k
+        models for one modality, returning per-fold metric dicts.
+    aggregate_cv_results(fold_results): recursively replaces every numeric
+        leaf in the per-fold results with {mean, std} across folds,
+        preserving the original nested structure regardless of its shape.
+"""
+
 
 from typing import cast
 import pandas as pd

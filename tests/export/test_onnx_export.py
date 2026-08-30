@@ -1,3 +1,8 @@
+"""
+Tests for src/defect_detection/export/onnx_export.py.
+"""
+
+
 import time
 from unittest.mock import MagicMock
 

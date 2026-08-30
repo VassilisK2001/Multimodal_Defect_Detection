@@ -1,3 +1,7 @@
+"""
+Tests for src/defect_detection/training/losses.py.
+"""
+
 
 import pandas as pd
 import pytest

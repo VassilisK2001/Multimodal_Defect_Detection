@@ -1,3 +1,11 @@
+""""
+Selects test.csv rows and extracts them as preloaded demo samples
+for the deployed app. It extracts one image and one raw vibration 
+window per sample. Preferred rows are computed directly from the 
+deployed model's real test-set predictions, prioritizing 
+correctly-classified examples.
+"""
+
 import json
 import logging
 

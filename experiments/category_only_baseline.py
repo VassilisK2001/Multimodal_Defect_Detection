@@ -1,4 +1,13 @@
-
+"""
+Trains a category-only baseline (fault_class predicted from MVTec category
+alone) and compares it against: 
+(1) the standalone image-only model, 
+(2) the fusion model's image branch, isolated by corrupting its vibration input (the
+same technique used in modality_shuffle_test.py) to observe how the branch
+behaves as actually trained within 'both', 
+(3) a per-category breakdown of whether 'both' repeats the category-only baseline's 
+specific mistakes.
+"""
 import json
 
 import pandas as pd

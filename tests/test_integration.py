@@ -1,3 +1,8 @@
+"""
+Integration tests verifying MultimodalDefectDataset and
+MultimodalDefectClassifier work together on a real manifest row.
+"""
+
 
 import pandas as pd
 import pytest

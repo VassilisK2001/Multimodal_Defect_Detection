@@ -1,3 +1,9 @@
+"""
+Runs MultimodalDefectClassifier on a raw MultimodalDefectDataset batch:
+moves tensors to device and passes only the input(s) the model has a
+branch for. Used by both the training loop and evaluation.
+"""
+
 
 import torch
 

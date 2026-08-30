@@ -1,3 +1,8 @@
+"""
+Builds the full manifest (MVTec images paired with CWRU vibration samples)
+and writes it to manifest.csv.
+"""
+
 import logging
 
 from defect_detection.data.manifest import build_manifest

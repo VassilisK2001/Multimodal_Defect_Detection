@@ -1,3 +1,7 @@
+"""
+Tests for src/defect_detection/training/visualization.py.
+"""
+
 
 import math
 

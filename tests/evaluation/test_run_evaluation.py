@@ -1,3 +1,7 @@
+"""
+Tests for src/defect_detection/evaluation/run_evaluation.py.
+"""
+
 
 from contextlib import contextmanager
 from typing import Any

@@ -1,3 +1,11 @@
+"""
+SHAP analysis of the 5 vibration features, for the vibration-only and fusion
+('both') models, both heads, on the test set. The fusion model is explained
+using each test row's own paired image. Saves the vibration-vs-fusion
+comparison plots (beeswarm, dependence, waterfall case study) to
+reports/shap_analysis/.
+"""
+
 import logging
 from typing import cast
 

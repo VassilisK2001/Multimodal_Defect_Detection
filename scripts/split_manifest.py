@@ -1,3 +1,7 @@
+"""
+Splits manifest.csv into stratified train/val/test CSVs.
+"""
+
 import logging
 
 import pandas as pd

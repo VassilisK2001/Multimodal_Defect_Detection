@@ -1,3 +1,10 @@
+"""
+Out-of-fold (OOF) cross-validation evaluation across all three modalities, on one
+shared stratified 5-fold split. Prints fold-level and global OOF ROC/PR AUC, and
+saves the two summary figures.
+"""
+
+
 import logging
 
 import pandas as pd

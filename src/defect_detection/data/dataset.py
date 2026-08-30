@@ -1,3 +1,11 @@
+"""
+PyTorch Dataset that loads paired (image, vibration) samples from the
+manifest built by manifest.py. Vibration features are extracted on the fly
+via features.py, with normalization (using precomputed mean/std) applied
+only if those stats are provided. Training-only augmentation is applied
+when the dataset is constructed in training mode.
+"""
+
 
 import numpy as np
 import torch

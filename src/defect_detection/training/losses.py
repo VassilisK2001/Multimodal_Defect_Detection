@@ -1,3 +1,19 @@
+"""
+Loss functions and class-weight utilities for the two-stage defect
+classifier: a binary defect gate (BCEWithLogitsLoss) and a fault-type head
+(CrossEntropyLoss), the latter evaluated only on defective
+samples in a batch.
+
+Exported:
+    TwoStageLoss: combines both heads' losses; forward() returns
+        (total_loss, defect_loss, fault_type_loss, n_defective), with
+        fault_type_loss=None when a batch has no defective samples.
+    compute_defect_gate_pos_weight(train_df): negative:positive ratio, for
+        BCEWithLogitsLoss's pos_weight.
+    compute_fault_type_class_weights(train_df, beta): per-class weights
+        via the effective number of samples (Cui et al.), normalized to average 1.0.
+"""
+
 
 import pandas as pd
 import torch

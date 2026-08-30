@@ -1,3 +1,41 @@
+"""
+SHAP analysis for the vibration branch, in vibration-only and fusion
+('both') models, for both heads. Uses shap.KernelExplainer paired with
+shap.kmeans-summarized backgrounds.
+
+Exported functions:
+    Background selection:
+        select_head1_background_rows(...): stratified background samples for each head 1. 
+        select_head2_background_rows(...): stratified background samples for each head 2.
+        summarize_background(...): k-means summarizes a background sample.
+
+    Prediction function builders:
+        make_vib_predict_fn(model, head): for the vibration-only model.
+        make_fusion_predict_fn(model, head, image): for the fusion model,
+            with one specific row's real image bound as a fixed input.
+
+    SHAP computation:
+        compute_shap_batched(...): one batched call, for predict functions
+            with no per-instance fixed input (vibration-only).
+        compute_shap_per_instance(...): one call per row, each with that
+            row's own bound image (fusion model).
+
+    Additivity checking:
+        check_additivity(...): compares sum(SHAP values) + baseline
+            against the model's actual output, on a given predict function.
+        check_additivity_per_instance(...): the same check, re-binding a
+            fresh predict function per row (needed since the fusion
+            model's predict function is row-specific).
+
+    Post-processing:
+        approximate_predictions_from_shap(...): reconstructs approximate
+            model output directly from already-computed SHAP values, via
+            the additivity relationship.
+        select_top_features(shap_values, k): the k features with the
+            highest mean absolute SHAP value.
+"""
+
+
 from typing import Callable, cast
 
 import numpy as np

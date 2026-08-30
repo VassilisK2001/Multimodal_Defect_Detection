@@ -1,3 +1,21 @@
+"""
+Per-sample, exact 2-player Shapley attribution of the fusion model's
+prediction to its image and vibration branches with a feature_mask 
+grouping each entire modality into one "player". Each attribution
+is averaged over several real background samples, not a single
+fixed reference, avoiding single-point baseline sensitivity.
+
+Exported functions:
+    build_feature_masks(...): builds the image/vibration group masks.
+    prepare_background_samples(...): draws real background (image,
+        vibration) pairs for baseline averaging.
+    compute_branch_contributions(...): returns
+        per-sample image/vibration attributions plus their standard error
+        across background draws.
+    check_shapley_additivity_sample(...): spot-checks that attributions
+        sum to the true model-output difference, on a few samples.
+"""
+
 from typing import Callable, Optional
 
 import numpy as np

@@ -1,3 +1,8 @@
+"""
+Tests for src/defect_detection/data/vibration_io.py.
+"""
+
+
 import numpy as np
 import pandas as pd
 from scipy.io import savemat

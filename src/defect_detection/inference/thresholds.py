@@ -1,3 +1,18 @@
+"""
+Recall-constrained defect-gate threshold estimation via stratified bootstrap
+resampling of the final deployed model's own predictions, directly
+quantifying threshold/recall/precision variability given the sample size.
+
+Exported functions:
+    bootstrap_threshold_distribution(y_true, y_proba, ...): resamples
+        positive and negative rows separately (preserving class balance)
+        across n_bootstrap draws, returning the full threshold/recall/
+        precision distribution plus their means and standard deviations.
+"""
+
+
+
+
 import numpy as np
 from sklearn.metrics import precision_recall_curve
 

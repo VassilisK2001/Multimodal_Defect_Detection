@@ -22,8 +22,6 @@
 ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![MLflow](https://img.shields.io/badge/MLflow-0194E2?style=for-the-badge&logo=mlflow&logoColor=white)
-![SHAP](https://img.shields.io/badge/SHAP-8A2BE2?style=for-the-badge)
-![Captum](https://img.shields.io/badge/Captum-FFC107?style=for-the-badge)
 ![Pytest](https://img.shields.io/badge/Pytest-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white)
 
 </div>
@@ -106,7 +104,7 @@ All three model variations (Image-only, Vibration-only, and Multimodal Fusion) w
 <br>
 
 ### 2. Precision-Recall Performance
-*Out-of-fold predictions were used to generate robust PR curves, isolating the Defect Gate behavior (left) and the specific Fault Class behavior (right).*
+*Out-of-fold predictions were used to generate robust PR curves, isolating the Defect Gate behavior and the specific Fault Class behavior.*
 
 <div align="center">
   <!-- Adjusted widths and added breaks to stack the images proportionally -->
